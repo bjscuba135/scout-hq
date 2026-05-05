@@ -18,8 +18,9 @@ class Settings(BaseSettings):
     scouthq_pg_host: str = "scouthq-postgres"
     scouthq_pg_port: int = 5432
 
-    # Security
-    scouthq_inbound_token: str = "change-me"
+    # Auth (global Basic Auth — covers browser, co-work scripts, and n8n)
+    scouthq_username: str = "ben"
+    scouthq_password: str = "changeme"
 
     # External
     lightrag_api_key: str = ""

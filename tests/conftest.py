@@ -91,7 +91,24 @@ async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
         async with factory() as session:
             yield session
 
+    # Override credentials so tests don't depend on env
+    from app.config import get_settings, Settings
     app.dependency_overrides[get_session] = override_get_session
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+
+    import os
+    os.environ.setdefault("SCOUTHQ_USERNAME", "testuser")
+    os.environ.setdefault("SCOUTHQ_PASSWORD", "testpass")
+    get_settings.cache_clear()
+
+    import base64
+    creds = base64.b64encode(b"testuser:testpass").decode()
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"Authorization": f"Basic {creds}"},
+    ) as ac:
         yield ac
+
     app.dependency_overrides.clear()
+    get_settings.cache_clear()
