@@ -39,11 +39,8 @@ class Settings(BaseSettings):
 
     @property
     def sync_database_url(self) -> str:
-        """Synchronous URL for Alembic migrations."""
-        return (
-            f"postgresql+psycopg2://{self.scouthq_pg_user}:{self.scouthq_pg_password}"
-            f"@{self.scouthq_pg_host}:{self.scouthq_pg_port}/{self.scouthq_pg_db}"
-        )
+        """Alias used by Alembic env.py — we run Alembic in async mode so asyncpg is fine."""
+        return self.database_url
 
     def load_dispatchers(self) -> dict:
         path = Path(self.dispatchers_config_path)

@@ -1,6 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Tasks — Scout HQ{% endblock %}
 {% block content %}
-<!-- Populated in §14.4 -->
-<p>Task list coming in §14.4.</p>
+<div class="filters">
+  <span>Category:</span>
+  <a href="/">All</a>
+  {% for cat in categories %}
+    <a href="/?category={{ cat }}{% if current_status %}&status={{ current_status }}{% endif %}"
+       {% if current_category == cat %}class="active"{% endif %}>{{ cat }}</a>
+  {% endfor %}
+  &nbsp;|&nbsp;
+  <span>Status:</span>
+  <a href="/?{% if current_category %}category={{ current_category }}{% endif %}">All</a>
+  {% for s in statuses %}
+    <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
+       {% if current_status == s %}class="active"{% endif %}>{{ s }}</a>
+  {% endfor %}
+</div>
+
+<table class="task-table">
+  <thead>
+    <tr>
+      <th>Priority</th><th>Title</th><th>Category</th><th>Status</th><th>Due</th>
+    </tr>
+  </thead>
+  <tbody id="task-list">
+    {% include "_partials/task_list_body.html" %}
+  </tbody>
+</table>
 {% endblock %}

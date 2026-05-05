@@ -1,6 +1,37 @@
 {% extends "base.html" %}
 {% block title %}{{ task.title }} — Scout HQ{% endblock %}
 {% block content %}
-<!-- Populated in §14.4 -->
-<p>Task detail coming in §14.4.</p>
+<div class="task-detail">
+  <div class="task-detail-header">
+    <a href="/">&larr; All tasks</a>
+    <span class="priority-badge priority-{{ task.priority }}">{{ task.priority }}</span>
+    <span class="status-badge">{{ task.status }}</span>
+  </div>
+
+  <h1>{{ task.title }}</h1>
+
+  {% if task.body %}
+  <div class="task-body">{{ task.body }}</div>
+  {% endif %}
+
+  <div class="task-meta">
+    <table>
+      <tr><th>Category</th><td>{{ task.category }}</td></tr>
+      <tr><th>Priority</th><td>{{ task.priority }}</td></tr>
+      <tr><th>Status</th><td>{{ task.status }}</td></tr>
+      <tr><th>Due</th><td>{{ task.due_date or "—" }}</td></tr>
+      <tr><th>Owner</th><td>{{ task.owner }}</td></tr>
+      <tr><th>Source</th><td>{{ task.source }}{% if task.source_ref %} / {{ task.source_ref }}{% endif %}</td></tr>
+      <tr><th>Created</th><td>{{ task.created_at.strftime("%d %b %Y %H:%M") }}</td></tr>
+      <tr><th>Updated</th><td>{{ task.updated_at.strftime("%d %b %Y %H:%M") }}</td></tr>
+    </table>
+  </div>
+
+  <div class="task-actions">
+    <button disabled title="Agents available in Phase 3">Run</button>
+  </div>
+
+  <!-- Phase 2: Nexus context panel -->
+  <div id="nexus-context"></div>
+</div>
 {% endblock %}

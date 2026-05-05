@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +10,8 @@ from app.config import get_settings
 from app.db.session import engine
 from app.db import models  # noqa: F401 — registers mappers before alembic runs
 from app.routes import tasks, webhooks
+
+APP_DIR = Path(__file__).parent
 
 
 @asynccontextmanager
@@ -25,7 +28,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 
 app.include_router(tasks.router)
 app.include_router(webhooks.router)

@@ -1,3 +1,4 @@
+{% for task in tasks %}
 <tr id="task-{{ task.id }}"
     hx-patch="/tasks/{{ task.id }}"
     hx-target="#task-{{ task.id }}"
@@ -8,3 +9,6 @@
   <td>{{ task.status }}</td>
   <td>{{ task.due_date or "" }}</td>
 </tr>
+{% else %}
+<tr><td colspan="5">No tasks match the current filters.</td></tr>
+{% endfor %}

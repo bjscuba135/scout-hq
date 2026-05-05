@@ -6,6 +6,7 @@ from typing import AsyncGenerator
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from testcontainers.postgres import PostgresContainer
 
@@ -13,7 +14,7 @@ from app.db.models import Base
 from app.db.session import get_session
 from app.main import app
 
-# ── Postgres container (shared across the session) ────────────────────────────
+# ── Postgres container (started once per session) ─────────────────────────────
 
 @pytest.fixture(scope="session")
 def postgres_container():
@@ -32,37 +33,62 @@ def db_url(postgres_container) -> str:
 
 
 @pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+def setup_schema(db_url: str):
+    """Create schema once, synchronously — avoids session-loop vs test-loop issues."""
+    async def _create():
+        engine = create_async_engine(db_url, echo=False)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await engine.dispose()
+
+    asyncio.run(_create())
+    yield
+
+    async def _drop():
+        engine = create_async_engine(db_url, echo=False)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        await engine.dispose()
+
+    asyncio.run(_drop())
 
 
-@pytest_asyncio.fixture(scope="session")
-async def db_engine(db_url):
+@pytest.fixture(autouse=True)
+def clean_db(setup_schema, db_url: str):
+    """TRUNCATE all tables after each test — sync fixture avoids loop-teardown issues."""
+    yield
+    async def _truncate():
+        engine = create_async_engine(db_url, echo=False)
+        async with engine.begin() as conn:
+            await conn.execute(
+                text("TRUNCATE task, task_run, task_context RESTART IDENTITY CASCADE")
+            )
+        await engine.dispose()
+    asyncio.run(_truncate())
+
+
+# ── Per-test engine + session + client ────────────────────────────────────────
+
+@pytest_asyncio.fixture
+async def db_engine(setup_schema, db_url: str):
     engine = create_async_engine(db_url, echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
 
 
 @pytest_asyncio.fixture
 async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
-    session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
-    async with session_factory() as session:
+    factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    async with factory() as session:
         yield session
-        await session.rollback()
 
 
 @pytest_asyncio.fixture
 async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
-    session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
+    factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
     async def override_get_session():
-        async with session_factory() as session:
+        async with factory() as session:
             yield session
 
     app.dependency_overrides[get_session] = override_get_session
