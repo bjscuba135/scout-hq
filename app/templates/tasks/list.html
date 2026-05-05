@@ -1,26 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Tasks — Scout HQ{% endblock %}
+
+{% block title %}Tasks ({{ tasks|length }}) — Scout HQ{% endblock %}
+
+{% block header_extra %}
+  <span class="header-count">{{ tasks|length }} task{% if tasks|length != 1 %}s{% endif %}</span>
+{% endblock %}
+
 {% block content %}
-<div class="filters">
-  <span>Category:</span>
-  <a href="/">All</a>
-  {% for cat in categories %}
-    <a href="/?category={{ cat }}{% if current_status %}&status={{ current_status }}{% endif %}"
-       {% if current_category == cat %}class="active"{% endif %}>{{ cat }}</a>
-  {% endfor %}
-  &nbsp;|&nbsp;
-  <span>Status:</span>
-  <a href="/?{% if current_category %}category={{ current_category }}{% endif %}">All</a>
-  {% for s in statuses %}
-    <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
-       {% if current_status == s %}class="active"{% endif %}>{{ s }}</a>
-  {% endfor %}
+{# ── Filter bar ──────────────────────────────────────────────────────────── #}
+<div class="filter-bar">
+  <div class="filter-group">
+    <span class="filter-label">Category</span>
+    <a href="/?{% if current_status %}status={{ current_status }}{% endif %}"
+       class="chip {% if not current_category %}active{% endif %}">All</a>
+    {% for cat in categories %}
+      <a href="/?category={{ cat }}{% if current_status %}&status={{ current_status }}{% endif %}"
+         class="chip {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+
+  <span class="filter-divider">|</span>
+
+  <div class="filter-group">
+    <span class="filter-label">Status</span>
+    <a href="/?{% if current_category %}category={{ current_category }}{% endif %}"
+       class="chip {% if not current_status %}active{% endif %}">All</a>
+    {% for s in statuses %}
+      <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
+         class="chip {% if current_status == s %}active{% endif %}">{{ s }}</a>
+    {% endfor %}
+  </div>
 </div>
 
+{# ── Task table ──────────────────────────────────────────────────────────── #}
 <table class="task-table">
   <thead>
     <tr>
-      <th>Priority</th><th>Title</th><th>Category</th><th>Status</th><th>Due</th>
+      <th class="col-priority">Priority</th>
+      <th>Title</th>
+      <th class="col-status">Status</th>
+      <th class="col-category">Category</th>
+      <th class="col-due">Due</th>
     </tr>
   </thead>
   <tbody id="task-list">

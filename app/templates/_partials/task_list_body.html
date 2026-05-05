@@ -1,14 +1,41 @@
 {% for task in tasks %}
-<tr id="task-{{ task.id }}"
-    hx-patch="/tasks/{{ task.id }}"
-    hx-target="#task-{{ task.id }}"
-    hx-swap="outerHTML">
-  <td class="priority-{{ task.priority }}">{{ task.priority }}</td>
-  <td><a href="/tasks/{{ task.id }}">{{ task.title }}</a></td>
-  <td>{{ task.category }}</td>
-  <td>{{ task.status }}</td>
-  <td>{{ task.due_date or "" }}</td>
+<tr id="task-{{ task.id }}">
+  <td class="col-priority">
+    <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+  </td>
+  <td class="title-cell">
+    <a href="/tasks/{{ task.id }}">{{ task.title }}</a>
+    {% if task.body %}
+    <div class="body-preview">{{ task.body | truncate(90, True, '…') }}</div>
+    {% endif %}
+  </td>
+  <td class="col-status">
+    {# Inline status toggle via HTMX — cycles open→done, waiting→done, done→open #}
+    <button class="status-toggle"
+            hx-patch="/tasks/{{ task.id }}"
+            hx-vals='{"status": "{% if task.status == "done" %}open{% else %}done{% endif %}"}'
+            hx-target="#task-{{ task.id }}"
+            hx-swap="outerHTML"
+            title="Click to toggle done">
+      <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+    </button>
+  </td>
+  <td class="col-category">{{ task.category }}</td>
+  <td class="col-due">
+    {% if task.due_date %}
+      <span class="{% if task.due_date < today and task.status not in ('done','cancelled') %}overdue{% endif %}">
+        {{ task.due_date.strftime('%d %b').lstrip('0') }}
+      </span>
+    {% endif %}
+  </td>
 </tr>
 {% else %}
-<tr><td colspan="5">No tasks match the current filters.</td></tr>
+<tr>
+  <td colspan="5">
+    <div class="empty-state">
+      <p>No tasks match the current filters.</p>
+      <p><a href="/">Clear filters</a></p>
+    </div>
+  </td>
+</tr>
 {% endfor %}

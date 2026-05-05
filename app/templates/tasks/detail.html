@@ -1,37 +1,71 @@
 {% extends "base.html" %}
+
 {% block title %}{{ task.title }} — Scout HQ{% endblock %}
+
 {% block content %}
 <div class="task-detail">
-  <div class="task-detail-header">
-    <a href="/">&larr; All tasks</a>
-    <span class="priority-badge priority-{{ task.priority }}">{{ task.priority }}</span>
-    <span class="status-badge">{{ task.status }}</span>
+
+  {# ── Breadcrumb ── #}
+  <div class="breadcrumb">
+    <a href="/">← All tasks</a>
   </div>
 
-  <h1>{{ task.title }}</h1>
+  {# ── Title ── #}
+  <h1 class="task-detail-title">{{ task.title }}</h1>
 
+  {# ── Badges ── #}
+  <div class="task-badges">
+    <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+    <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+    <span class="badge badge-low">{{ task.category }}</span>
+  </div>
+
+  {# ── Body ── #}
   {% if task.body %}
-  <div class="task-body">{{ task.body }}</div>
+  <div class="task-body-content">{{ task.body }}</div>
   {% endif %}
 
-  <div class="task-meta">
-    <table>
-      <tr><th>Category</th><td>{{ task.category }}</td></tr>
-      <tr><th>Priority</th><td>{{ task.priority }}</td></tr>
-      <tr><th>Status</th><td>{{ task.status }}</td></tr>
-      <tr><th>Due</th><td>{{ task.due_date or "—" }}</td></tr>
-      <tr><th>Owner</th><td>{{ task.owner }}</td></tr>
-      <tr><th>Source</th><td>{{ task.source }}{% if task.source_ref %} / {{ task.source_ref }}{% endif %}</td></tr>
-      <tr><th>Created</th><td>{{ task.created_at.strftime("%d %b %Y %H:%M") }}</td></tr>
-      <tr><th>Updated</th><td>{{ task.updated_at.strftime("%d %b %Y %H:%M") }}</td></tr>
-    </table>
-  </div>
+  {# ── Metadata ── #}
+  <table class="meta-table">
+    <tr>
+      <th>Status</th>
+      <td>
+        {# HTMX select — app.js converts PATCH params to JSON #}
+        <select hx-patch="/tasks/{{ task.id }}"
+                hx-trigger="change"
+                hx-target="closest .task-detail"
+                hx-swap="outerHTML"
+                name="status"
+                style="font-size:0.85rem; padding:0.2rem 0.4rem; border:1px solid #e5e7eb; border-radius:4px; cursor:pointer;">
+          {% for s in ['open','in_progress','waiting','done','cancelled'] %}
+          <option value="{{ s }}" {% if task.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+    <tr><th>Priority</th><td><span class="badge badge-{{ task.priority }}">{{ task.priority }}</span></td></tr>
+    <tr><th>Category</th><td>{{ task.category }}</td></tr>
+    <tr><th>Due</th><td>
+      {% if task.due_date %}{{ task.due_date.strftime('%d %b %Y').lstrip('0') }}{% else %}—{% endif %}
+    </td></tr>
+    <tr><th>Owner</th><td>{{ task.owner }}</td></tr>
+    <tr><th>Source</th><td>
+      {{ task.source }}{% if task.source_ref %} / <code style="font-size:0.78rem">{{ task.source_ref }}</code>{% endif %}
+    </td></tr>
+    <tr><th>Created</th><td>{{ task.created_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+    <tr><th>Updated</th><td>{{ task.updated_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+  </table>
 
+  {# ── Actions ── #}
   <div class="task-actions">
-    <button disabled title="Agents available in Phase 3">Run</button>
+    <button class="btn btn-primary" disabled title="Agents available in Phase 3">▶ Run</button>
+    <a href="/" class="btn btn-secondary">← Back</a>
   </div>
 
-  <!-- Phase 2: Nexus context panel -->
-  <div id="nexus-context"></div>
+  {# ── Nexus context panel (Phase 2) ── #}
+  <div id="nexus-context">
+    Nexus context — available in Phase 2
+  </div>
+
 </div>
 {% endblock %}

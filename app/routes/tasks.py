@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -90,6 +90,7 @@ async def list_tasks(
         "current_status": status,
         "categories": sorted(VALID_CATEGORIES),
         "statuses": list(VALID_STATUSES),
+        "today": date.today(),
     }
 
     if _is_htmx(request):
@@ -149,7 +150,15 @@ async def patch_task(
     await session.refresh(task)
 
     if _is_htmx(request):
-        return templates.TemplateResponse(request, "_partials/task_row.html", {"task": task})
+        hx_target = request.headers.get("HX-Target", "")
+        if hx_target.startswith("task-"):
+            # Called from the list view row toggle — return just the row partial
+            return templates.TemplateResponse(request, "_partials/task_row.html", {"task": task})
+        # Called from the detail page — tell HTMX to navigate to the detail page
+        return Response(
+            status_code=200,
+            headers={"HX-Location": f"/tasks/{task.id}"},
+        )
     return templates.TemplateResponse(request, "tasks/detail.html", {"task": task})
 
 

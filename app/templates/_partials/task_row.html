@@ -1,10 +1,27 @@
-<tr id="task-{{ task.id }}"
-    hx-patch="/tasks/{{ task.id }}"
-    hx-target="#task-{{ task.id }}"
-    hx-swap="outerHTML">
-  <td class="priority-{{ task.priority }}">{{ task.priority }}</td>
-  <td><a href="/tasks/{{ task.id }}">{{ task.title }}</a></td>
-  <td>{{ task.category }}</td>
-  <td>{{ task.status }}</td>
-  <td>{{ task.due_date or "" }}</td>
+<tr id="task-{{ task.id }}">
+  <td class="col-priority">
+    <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+  </td>
+  <td class="title-cell">
+    <a href="/tasks/{{ task.id }}">{{ task.title }}</a>
+    {% if task.body %}
+    <div class="body-preview">{{ task.body | truncate(90, True, '…') }}</div>
+    {% endif %}
+  </td>
+  <td class="col-status">
+    <button class="status-toggle"
+            hx-patch="/tasks/{{ task.id }}"
+            hx-vals='{"status": "{% if task.status == "done" %}open{% else %}done{% endif %}"}'
+            hx-target="#task-{{ task.id }}"
+            hx-swap="outerHTML"
+            title="Click to toggle done">
+      <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+    </button>
+  </td>
+  <td class="col-category">{{ task.category }}</td>
+  <td class="col-due">
+    {% if task.due_date %}
+      {{ task.due_date.strftime('%d %b').lstrip('0') }}
+    {% endif %}
+  </td>
 </tr>
