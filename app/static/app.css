@@ -1,0 +1,46 @@
+/* Scout HQ — base styles. Expanded in §14.4. */
+:root {
+  --scout-purple: #7413dc;
+  --scout-purple-dark: #5a0fad;
+  --priority-high: #dc2626;
+  --priority-med: #d97706;
+  --priority-low: #6b7280;
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --text-muted: #6b7280;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+}
+
+.site-header {
+  background: var(--scout-purple);
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo { font-size: 1.1rem; font-weight: 700; }
+.group-name { font-size: 0.85rem; opacity: 0.85; }
+
+.main-content {
+  max-width: 1200px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+}

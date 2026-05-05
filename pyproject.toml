@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scout-hq"
+version = "0.1.0"
+description = "Personal web cockpit for Ben Colley, GLV at 1st Beetley Scout Group"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    "jinja2>=3.1.4",
+    "python-multipart>=0.0.12",
+    "httpx>=0.28.0",
+    "watchfiles>=1.0.0",
+    "pydantic-settings>=2.7.0",
+    "markdown-it-py>=3.0.0",
+    "pyyaml>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+    "testcontainers[postgres]>=4.8.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

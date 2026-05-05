@@ -1,0 +1,20 @@
+dispatchers:
+  - type: human
+    # no-op; tasks owned by 'ben' or 'human' show in UI for manual action
+
+  - type: n8n_webhook
+    base_url: http://192.168.10.29:5678
+    flows:
+      email_triage: /webhook/email-triage
+      osm_digest:   /webhook/osm-digest
+
+  - type: claude_code
+    queue_dir: /opt/AppData/scouthq/queue/claude
+    # outbound:  scout-hq writes <run_id>.task.json
+    # inbound:   claude code writes <run_id>.result.json
+
+  - type: codex_cli           # Phase 7
+    binary: /usr/local/bin/codex
+
+  - type: gemini_cli          # Phase 7
+    binary: /usr/local/bin/gemini
