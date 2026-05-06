@@ -1,0 +1,158 @@
+{#
+  Reusable detail panel — rendered by GET /tasks/{id} and returned by PATCH/notes
+  Target:  <div id="task-detail"> with hx-swap="outerHTML"
+#}
+<div class="task-detail" id="task-detail"
+     data-title="{{ task.title | e }}"
+     data-category="{{ task.category }}"
+     data-priority="{{ task.priority }}"
+     data-status="{{ task.status }}"
+     data-due="{{ task.due_date.strftime('%d %b %Y') if task.due_date else '' }}"
+     data-body="{{ task.body | e if task.body else '' }}">
+
+  {# ── Breadcrumb ── #}
+  <div class="breadcrumb">
+    <a href="/">← All tasks</a>
+  </div>
+
+  {# ── Title (click to edit) ── #}
+  <div id="title-display">
+    <h1 class="task-detail-title">{{ task.title }}</h1>
+    <button class="btn-link" onclick="showEdit('title-edit-form','title-display')">✏ Edit title</button>
+  </div>
+
+  <form id="title-edit-form" class="title-edit-form" style="display:none"
+        hx-patch="/tasks/{{ task.id }}"
+        hx-target="#task-detail"
+        hx-swap="outerHTML">
+    <input class="title-input" type="text" name="title" value="{{ task.title }}" required>
+    <div class="edit-actions">
+      <button type="submit" class="btn btn-primary btn-sm">Save</button>
+      <button type="button" class="btn btn-secondary btn-sm"
+              onclick="hideEdit('title-edit-form','title-display')">Cancel</button>
+    </div>
+  </form>
+
+  {# ── Badges (read-only display) ── #}
+  <div class="task-badges">
+    <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+    <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+    <span class="badge badge-low">{{ task.category }}</span>
+  </div>
+
+  {# ── Body / edit body ── #}
+  <div class="body-section">
+    <div id="body-display">
+      {% if task.body %}
+      <div class="task-body-content">{{ task.body }}</div>
+      {% else %}
+      <div class="task-body-content" style="color:var(--text-muted);font-style:italic">No description yet.</div>
+      {% endif %}
+      <div class="body-edit-hint">
+        <button class="btn-link" onclick="showEdit('body-edit-form','body-display')">✏ Edit body</button>
+      </div>
+    </div>
+
+    <form id="body-edit-form" class="body-edit-form" style="display:none"
+          hx-patch="/tasks/{{ task.id }}"
+          hx-target="#task-detail"
+          hx-swap="outerHTML">
+      <textarea class="body-textarea" name="body" rows="8">{{ task.body or '' }}</textarea>
+      <div class="edit-actions">
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        <button type="button" class="btn btn-secondary btn-sm"
+                onclick="hideEdit('body-edit-form','body-display')">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  {# ── Metadata (inline-editable fields) ── #}
+  <table class="meta-table">
+    <tr>
+      <th>Status</th>
+      <td>
+        <select name="status"
+                hx-patch="/tasks/{{ task.id }}"
+                hx-trigger="change"
+                hx-target="#task-detail"
+                hx-swap="outerHTML">
+          {% for s in ['open','in_progress','waiting','done','cancelled'] %}
+          <option value="{{ s }}" {% if task.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Priority</th>
+      <td>
+        <select name="priority"
+                hx-patch="/tasks/{{ task.id }}"
+                hx-trigger="change"
+                hx-target="#task-detail"
+                hx-swap="outerHTML">
+          {% for p in ['high','med','low'] %}
+          <option value="{{ p }}" {% if task.priority == p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Category</th>
+      <td>
+        <select name="category"
+                hx-patch="/tasks/{{ task.id }}"
+                hx-trigger="change"
+                hx-target="#task-detail"
+                hx-swap="outerHTML">
+          {% for c in ['admin','squirrels','beavers','cubs','scouts','hut','events','volunteers','finance'] %}
+          <option value="{{ c }}" {% if task.category == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <th>Due date</th>
+      <td>
+        <input type="date" name="due_date"
+               value="{{ task.due_date.isoformat() if task.due_date else '' }}"
+               hx-patch="/tasks/{{ task.id }}"
+               hx-trigger="change"
+               hx-target="#task-detail"
+               hx-swap="outerHTML">
+      </td>
+    </tr>
+    <tr><th>Owner</th><td>{{ task.owner }}</td></tr>
+    <tr>
+      <th>Source</th>
+      <td>{{ task.source }}{% if task.source_ref %} / <code style="font-size:0.78rem">{{ task.source_ref }}</code>{% endif %}</td>
+    </tr>
+    <tr><th>Created</th><td>{{ task.created_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+    <tr><th>Updated</th><td>{{ task.updated_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+  </table>
+
+  {# ── Actions ── #}
+  <div class="task-actions">
+    <button class="btn btn-primary" disabled title="Agents available in Phase 3">▶ Run</button>
+    <button class="btn btn-secondary" id="copy-prompt-btn" onclick="copyTaskAsPrompt()">📋 Copy as prompt</button>
+    <a href="/" class="btn btn-secondary">← All tasks</a>
+  </div>
+
+  {# ── Append note ── #}
+  <div class="note-section">
+    <h3>Add note</h3>
+    <form hx-post="/tasks/{{ task.id }}/notes"
+          hx-target="#task-detail"
+          hx-swap="outerHTML">
+      <textarea class="note-textarea" name="note" placeholder="Add a note — will be timestamped and appended to the body…" required></textarea>
+      <div class="note-submit-row">
+        <button type="submit" class="btn btn-primary btn-sm">Add note →</button>
+      </div>
+    </form>
+  </div>
+
+  {# ── Nexus context panel (Phase 2) ── #}
+  <div id="nexus-context">
+    Nexus context — available in Phase 2
+  </div>
+
+</div>

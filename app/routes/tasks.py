@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import case, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -52,6 +52,18 @@ class TaskPatch(BaseModel):
     due_date: date | None = None
     owner: str | None = None
     requires_approval: bool | None = None
+
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """Date inputs send empty string when cleared — treat as None."""
+        if v == "" or v is None:
+            return None
+        return v
+
+
+class NoteAppend(BaseModel):
+    note: str
 
 
 def _is_htmx(request: Request) -> bool:
@@ -151,14 +163,16 @@ async def patch_task(
 
     if _is_htmx(request):
         hx_target = request.headers.get("HX-Target", "")
+        if hx_target == "task-detail":
+            # PATCH from detail page — return updated detail partial
+            return templates.TemplateResponse(
+                request, "_partials/task_detail_body.html", {"task": task}
+            )
         if hx_target.startswith("task-"):
-            # Called from the list view row toggle — return just the row partial
-            return templates.TemplateResponse(request, "_partials/task_row.html", {"task": task})
-        # Called from the detail page — tell HTMX to navigate to the detail page
-        return Response(
-            status_code=200,
-            headers={"HX-Location": f"/tasks/{task.id}"},
-        )
+            # PATCH from list view row toggle — return updated row
+            return templates.TemplateResponse(
+                request, "_partials/task_row.html", {"task": task}
+            )
     return templates.TemplateResponse(request, "tasks/detail.html", {"task": task})
 
 
@@ -172,6 +186,29 @@ async def delete_task(task_id: uuid.UUID, session: Session):
     task.status = "cancelled"
     await session.commit()
     return Response(status_code=200)
+
+
+# ── Append note ───────────────────────────────────────────────────────────────
+
+@router.post("/tasks/{task_id}/notes", response_class=HTMLResponse)
+async def append_note(
+    request: Request, task_id: uuid.UUID, data: NoteAppend, session: Session
+):
+    task = await session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    ts = datetime.now(timezone.utc).strftime("%d %b %Y %H:%M")
+    note_text = data.note.strip()
+    separator = "\n\n" if task.body else ""
+    task.body = (task.body or "") + f"{separator}[{ts}] {note_text}"
+
+    await session.commit()
+    await session.refresh(task)
+
+    return templates.TemplateResponse(
+        request, "_partials/task_detail_body.html", {"task": task}
+    )
 
 
 # ── Validation helpers ────────────────────────────────────────────────────────

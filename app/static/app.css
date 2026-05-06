@@ -283,6 +283,110 @@ a:hover { text-decoration: underline; }
 /* ── Overdue highlight ───────────────────────────────────────────────────── */
 .overdue { color: var(--priority-high); font-weight: 600; }
 
+/* ── Inline edit / note controls ─────────────────────────────────────────── */
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.btn-link:hover { color: var(--scout-purple); }
+
+.btn-sm {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.title-edit-form {
+  margin-bottom: 1rem;
+}
+.title-input {
+  width: 100%;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 0.35rem 0.5rem;
+  border: 2px solid var(--scout-purple);
+  border-radius: var(--radius);
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.body-section { margin-bottom: 1.25rem; }
+.body-edit-hint {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.3rem;
+}
+.body-edit-form { margin-bottom: 1.25rem; }
+.body-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid var(--scout-purple);
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+  line-height: 1.65;
+  font-family: inherit;
+  resize: vertical;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+.body-textarea:focus { outline: none; }
+
+.edit-actions { display: flex; gap: 0.4rem; }
+
+/* ── Meta table selects / date inputs ────────────────────────────────────── */
+.meta-table select,
+.meta-table input[type="date"] {
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text);
+}
+.meta-table select:hover,
+.meta-table input[type="date"]:hover {
+  border-color: var(--scout-purple);
+}
+
+/* ── Note section ────────────────────────────────────────────────────────── */
+.note-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+.note-section h3 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  margin: 0 0 0.6rem;
+}
+.note-textarea {
+  width: 100%;
+  min-height: 70px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+.note-textarea:focus {
+  outline: none;
+  border-color: var(--scout-purple);
+}
+.note-submit-row { display: flex; justify-content: flex-end; }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .col-category, .col-due, .task-table td.body-preview { display: none; }
