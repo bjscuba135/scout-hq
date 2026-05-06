@@ -25,10 +25,28 @@ function hideEdit(hideId, showId) {
   if (show) show.style.display = '';
 }
 
+// ── Entity suggestion type filter (client-side) ───────────────────────────────
+
+function filterSuggest(btn, type) {
+  // Update active chip
+  btn.closest('.ep-type-chips').querySelectorAll('.chip').forEach(function(c) {
+    c.classList.remove('active');
+  });
+  btn.classList.add('active');
+  // Show/hide suggest items
+  var body = btn.closest('.ep-suggest-body');
+  if (!body) return;
+  body.querySelectorAll('.suggest-item').forEach(function(item) {
+    var matches = !type || (item.dataset.entityType || '') === type;
+    item.style.display = matches ? '' : 'none';
+  });
+}
+
 // ── Copy task as prompt ───────────────────────────────────────────────────────
 
 function copyTaskAsPrompt() {
-  const detail = document.getElementById('task-detail');
+  // Data lives on #task-main-col (left column of the two-column layout)
+  var detail = document.getElementById('task-main-col') || document.getElementById('task-detail');
   if (!detail) return;
 
   const title    = detail.dataset.title    || '';

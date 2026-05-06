@@ -162,10 +162,10 @@ async def patch_task(
 
     if _is_htmx(request):
         hx_target = request.headers.get("HX-Target", "")
-        if hx_target == "task-detail":
-            # PATCH from detail page — return updated detail partial
+        if hx_target == "task-main-col":
+            # PATCH from detail page left column — return updated main col only
             return templates.TemplateResponse(
-                request, "_partials/task_detail_body.html", {"task": task}
+                request, "_partials/task_main_col.html", {"task": task}
             )
         if hx_target.startswith("task-"):
             # PATCH from list view row toggle — return updated row
@@ -206,7 +206,7 @@ async def append_note(
     await session.refresh(task)
 
     return templates.TemplateResponse(
-        request, "_partials/task_detail_body.html", {"task": task}
+        request, "_partials/task_main_col.html", {"task": task}
     )
 
 
