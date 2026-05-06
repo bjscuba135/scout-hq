@@ -321,6 +321,15 @@ details.ep-suggest-details summary::-webkit-details-marker { display: none; }
   padding-top: 0.5rem;
 }
 
+/* Attach loading indicator */
+.ep-attaching-msg {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.htmx-request .ep-attaching-msg { opacity: 1; }
+
 /* Entity panel search */
 .ep-search-input {
   width: 100%;

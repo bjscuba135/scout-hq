@@ -110,6 +110,26 @@ function _flashCopyBtn() {
   setTimeout(function() { btn.textContent = orig; }, 2000);
 }
 
+// ── Inject entity types into the attach form payload ─────────────────────────
+// json-enc only sends entity_names (the checkbox values). This handler adds
+// entity_types as a name→type dict so the backend can store the type.
+
+document.body.addEventListener('htmx:configRequest', function(evt) {
+  var elt = evt.detail.elt;
+  if (!elt) return;
+  var form = (elt.id === 'ep-attach-form') ? elt : (elt.closest ? elt.closest('#ep-attach-form') : null);
+  if (!form) return;
+
+  var types = {};
+  form.querySelectorAll('.entity-cb:checked').forEach(function(cb) {
+    var type = cb.dataset.type || (cb.closest('[data-entity-type]') || {}).dataset.entityType || '';
+    if (cb.value) types[cb.value] = type;
+  });
+  if (Object.keys(types).length) {
+    evt.detail.parameters.entity_types = types;
+  }
+});
+
 // ── Clear note textarea after successful note append ─────────────────────────
 
 document.body.addEventListener('htmx:afterSwap', function (evt) {

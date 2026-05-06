@@ -6,7 +6,7 @@
 <div class="suggest-list">
   {% for e in suggestions %}
   <label class="suggest-item" data-entity-type="{{ e.type | lower }}">
-    <input type="checkbox" name="entity_names" value="{{ e.name | e }}" class="entity-cb">
+    <input type="checkbox" name="entity_names" value="{{ e.name | e }}" class="entity-cb" data-type="{{ e.type | lower }}">
     <span class="suggest-item-body">
       <span class="suggest-name">{{ e.name }}</span>
       {% if e.type %}

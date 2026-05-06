@@ -11,6 +11,9 @@
 
   <div class="entity-detail-header">
     <h1 class="entity-detail-title">{{ entity_name }}</h1>
+    {% if entity_type %}
+    <span class="entity-type-badge type-{{ entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ entity_type }}</span>
+    {% endif %}
     {% if pin %}
     <span class="pin-star" title="Pinned ({{ pin.pin_level }})">⭐ {{ pin.pin_level }}</span>
     <button class="btn btn-secondary btn-sm"

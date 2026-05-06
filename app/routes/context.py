@@ -40,6 +40,7 @@ def _request_user(request: Request) -> str:
 
 class AttachEntities(BaseModel):
     entity_names: list[str] = []
+    entity_types: dict[str, str] = {}  # name → type, injected by htmx:configRequest
 
 class DetachEntity(BaseModel):
     entity_name: str
@@ -272,10 +273,12 @@ async def attach_entities(
             )
         )
         if not existing.scalar_one_or_none():
+            etype = (data.entity_types.get(name) or "").strip() or None
             session.add(
                 TaskEntity(
                     task_id=task_id,
                     entity_name=name,
+                    entity_type=etype,
                     source="manual",
                     relevance=1.0,
                     attached_by=actor,

@@ -126,20 +126,49 @@ async def entity_detail(request: Request, entity_name: str, session: Session):
     )
     pin = pin_result.scalar_one_or_none()
 
-    # Fetch LightRAG context for this entity
+    # hybrid mode gives better recall for specific named entities than local
     client = get_nexus_client()
-    data = await client.query_context(entity_name, mode="local")
+    data = await client.query_context(entity_name, mode="hybrid")
     raw_entities = data.get("entities", [])
 
-    # Find primary entity description
-    primary = next(
-        (e for e in raw_entities if e.get("entity_name", "").lower() == entity_name.lower()),
-        None,
-    )
-    description = primary.get("description", "") if primary else ""
-    related = [e for e in raw_entities if e.get("entity_name", "").lower() != entity_name.lower()][:5]
+    name_lower = entity_name.lower()
 
-    # Tasks linked to this entity
+    # 1. Exact match, 2. substring match (either direction), 3. first result
+    def _match_score(e: dict) -> int:
+        n = e.get("entity_name", "").lower()
+        if n == name_lower:
+            return 0
+        if name_lower in n or n in name_lower:
+            return 1
+        return 2
+
+    ranked = sorted(raw_entities, key=_match_score)
+    primary = ranked[0] if ranked else None
+    description = (primary.get("description") or "") if primary else ""
+
+    # Entity type: pin table → LightRAG result → task_entity table
+    entity_type = (pin.entity_type if pin else None) or (
+        primary.get("entity_type") if primary else None
+    )
+    if not entity_type:
+        te_type = await session.execute(
+            select(TaskEntity.entity_type)
+            .where(
+                TaskEntity.entity_name == entity_name,
+                TaskEntity.entity_type.isnot(None),
+            )
+            .limit(1)
+        )
+        row = te_type.first()
+        entity_type = row[0] if row else None
+
+    # Related = everything that isn't the primary match (up to 5)
+    related = [
+        e for e in raw_entities
+        if e.get("entity_name", "").lower() != (primary.get("entity_name", "").lower() if primary else "")
+    ][:5]
+
+    # Tasks linked to this entity (open/waiting only)
     te_result = await session.execute(
         select(TaskEntity).where(TaskEntity.entity_name == entity_name)
     )
@@ -154,6 +183,7 @@ async def entity_detail(request: Request, entity_name: str, session: Session):
         "entities/detail.html",
         {
             "entity_name": entity_name,
+            "entity_type": entity_type,
             "pin": pin,
             "description": description,
             "related": related,

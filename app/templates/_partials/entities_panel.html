@@ -77,12 +77,14 @@
     <form hx-post="/tasks/{{ task_id }}/entities/attach"
           hx-target="#entities-panel"
           hx-swap="innerHTML"
+          hx-indicator="#ep-attaching"
           id="ep-attach-form">
       <div id="ep-suggest-results">
         {% include "_partials/ep_suggest_content.html" %}
       </div>
       <div class="ep-attach-actions">
         <button type="submit" class="btn btn-primary btn-sm">Attach selected →</button>
+        <span id="ep-attaching" class="htmx-indicator ep-attaching-msg">Attaching…</span>
       </div>
     </form>
 
