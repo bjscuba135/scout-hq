@@ -150,9 +150,12 @@
     </form>
   </div>
 
-  {# ── Nexus context panel (Phase 2) ── #}
-  <div id="nexus-context">
-    Nexus context — available in Phase 2
+  {# ── Nexus context panel — lazy-loaded ── #}
+  <div id="nexus-context"
+       hx-get="/tasks/{{ task.id }}/context"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="context-loading"><span class="spinner">⟳</span> Loading context…</div>
   </div>
 
 </div>

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entity_name }} — Scout HQ{% endblock %}
+
+{% block content %}
+<div class="entity-detail">
+
+  <div class="breadcrumb">
+    <a href="/entities">← Entities</a>
+  </div>
+
+  <div class="entity-detail-header">
+    <h1 class="entity-detail-title">{{ entity_name }}</h1>
+    {% if pin %}
+    <span class="pin-star" title="Pinned ({{ pin.pin_level }})">⭐ {{ pin.pin_level }}</span>
+    <button class="btn btn-secondary btn-sm"
+            hx-post="/entities/unpin"
+            hx-vals='{"entity_name": {{ entity_name | jsonstr }}}'
+            hx-target="#pinned-entities-list"
+            hx-swap="outerHTML">Unpin</button>
+    {% else %}
+    <button class="btn btn-secondary btn-sm"
+            hx-post="/entities/pin"
+            hx-vals='{"entity_name": {{ entity_name | jsonstr }}}'
+            hx-target="#pinned-entities-list"
+            hx-swap="outerHTML">☆ Pin</button>
+    {% endif %}
+  </div>
+
+  {% if description %}
+  <div class="entity-description-block">{{ description }}</div>
+  {% else %}
+  <p class="text-muted">No description available in Nexus for this entity.</p>
+  {% endif %}
+
+  {# ── Linked open tasks ── #}
+  {% if linked_tasks %}
+  <h3 class="section-heading">Linked tasks ({{ linked_tasks | length }})</h3>
+  <ul class="linked-tasks-list">
+    {% for task in linked_tasks %}
+    <li>
+      <span class="badge badge-{{ task.priority }}">{{ task.priority }}</span>
+      <a href="/tasks/{{ task.id }}">{{ task.title }}</a>
+      <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-muted" style="margin-top:1rem">No open tasks linked to this entity yet. Links appear automatically when a task's context panel loads.</p>
+  {% endif %}
+
+  {# ── Related entities from Nexus ── #}
+  {% if related %}
+  <h3 class="section-heading">Related in Nexus</h3>
+  <div class="related-entities">
+    {% for e in related %}
+    <div class="entity-card compact">
+      <div class="entity-card-header">
+        <a href="/entities/{{ e.entity_name | urlencode }}" class="entity-name">{{ e.entity_name }}</a>
+        {% if e.entity_type %}
+        <span class="entity-type-badge type-{{ e.entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.entity_type }}</span>
+        {% endif %}
+      </div>
+      {% if e.description %}
+      <p class="entity-desc">{{ e.description[:120] }}{% if e.description | length > 120 %}…{% endif %}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# Hidden target so pin/unpin buttons from this page update the sidebar #}
+  <div id="pinned-entities-list" style="display:none"></div>
+
+</div>
+{% endblock %}

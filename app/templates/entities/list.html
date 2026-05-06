@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Entities — Scout HQ{% endblock %}
+
+{% block header_extra %}
+  <a href="/" class="btn btn-secondary btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)">← Tasks</a>
+{% endblock %}
+
+{% block content %}
+<div class="entities-page">
+
+  <h2 class="page-heading">⭐ Pinned entities</h2>
+  <p class="page-subtext">Pin entities from LightRAG that matter to 1st Beetley. They appear in your dashboard sidebar and are highlighted in task context panels.</p>
+
+  {# ── Search ── #}
+  <div class="entity-search-box">
+    <input type="search"
+           name="q"
+           placeholder="Search entities in Nexus…"
+           autocomplete="off"
+           class="entity-search-input"
+           hx-get="/entities/search"
+           hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#entity-search-results"
+           hx-swap="innerHTML">
+  </div>
+  <div id="entity-search-results" class="entity-search-results"></div>
+
+  {# ── Pinned list ── #}
+  <h3 class="section-heading">Your pins</h3>
+  {% include "_partials/pinned_entities_list.html" %}
+
+  {# ── Popular ── #}
+  {% if popular %}
+  <h3 class="section-heading">Popular in Nexus</h3>
+  <div class="popular-grid">
+    {% for name in popular %}
+    <div class="popular-item">
+      <a href="/entities/{{ name | urlencode }}" class="popular-name">{{ name }}</a>
+      {% if name in pinned_names %}
+      <span class="pin-star">⭐</span>
+      {% else %}
+      <button class="btn-pin"
+              hx-post="/entities/pin"
+              hx-vals='{"entity_name": {{ name | jsonstr }}}'
+              hx-target="#pinned-entities-list"
+              hx-swap="outerHTML">☆</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

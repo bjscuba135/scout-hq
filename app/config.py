@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     lightrag_api_key: str = ""
     litellm_api_key: str = ""
     scouthq_base_url: str = "https://scouthq.local"
+    nexus_base_url: str = "http://host.docker.internal:9621"
 
     # App
     scouthq_restart: str = "unless-stopped"

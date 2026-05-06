@@ -1,0 +1,21 @@
+{# Pinned entities sidebar list — target: #pinned-entities-list outerHTML #}
+<div id="pinned-entities-list" class="pinned-list">
+  {% if pins %}
+    {% for pin in pins %}
+    <div class="pinned-item">
+      <a href="/entities/{{ pin.entity_name | urlencode }}" class="pinned-name">{{ pin.entity_name }}</a>
+      {% if pin.entity_type %}
+      <span class="entity-type-badge type-{{ pin.entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ pin.entity_type }}</span>
+      {% endif %}
+      <button class="btn-unpin"
+              title="Unpin"
+              hx-post="/entities/unpin"
+              hx-vals='{"entity_name": {{ pin.entity_name | jsonstr }}}'
+              hx-target="#pinned-entities-list"
+              hx-swap="outerHTML">×</button>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p class="sidebar-empty">No pinned entities yet.<br>Open a task to pin entities from its context.</p>
+  {% endif %}
+</div>

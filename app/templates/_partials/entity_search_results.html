@@ -1,0 +1,21 @@
+{# Search results for /entities page — swapped into #entity-search-results innerHTML #}
+{% if names %}
+<ul class="search-result-list">
+  {% for name in names %}
+  <li class="search-result-item">
+    <a href="/entities/{{ name | urlencode }}" class="search-result-name">{{ name }}</a>
+    {% if name in pinned_names %}
+    <span class="pin-star" title="Already pinned">⭐</span>
+    {% else %}
+    <button class="btn-pin btn-sm"
+            hx-post="/entities/pin"
+            hx-vals='{"entity_name": {{ name | jsonstr }}}'
+            hx-target="#pinned-entities-list"
+            hx-swap="outerHTML">☆ Pin</button>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p style="color:var(--text-muted);font-size:0.85rem">No entities found for "{{ q }}".</p>
+{% endif %}

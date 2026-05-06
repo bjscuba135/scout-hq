@@ -1,0 +1,49 @@
+{# Context panel — swapped into #nexus-context innerHTML #}
+{% if entities %}
+<div class="context-panel">
+  <div class="context-header">
+    <span class="context-title">🔍 Nexus context</span>
+    <button class="btn-link context-refresh"
+            hx-post="/tasks/{{ task_id }}/context/refresh"
+            hx-target="#nexus-context"
+            hx-swap="innerHTML">🔄 Refresh</button>
+    <span class="context-age">
+      {% if from_cache %}cached · {% endif %}{{ fetched_at.strftime('%d %b %H:%M') }}
+    </span>
+  </div>
+
+  <div class="context-entities">
+    {% for entity in entities %}
+    <div class="entity-card">
+      <div class="entity-card-header">
+        <a href="/entities/{{ entity.name | urlencode }}" class="entity-name">{{ entity.name }}</a>
+        {% if entity.type %}
+        <span class="entity-type-badge type-{{ entity.type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ entity.type }}</span>
+        {% endif %}
+        {% if entity.name in pinned_names %}
+        <span class="pin-star" title="Pinned">⭐</span>
+        {% else %}
+        <button class="btn-pin"
+                title="Pin entity"
+                hx-post="/entities/pin"
+                hx-vals='{"entity_name": {{ entity.name | jsonstr }}, "entity_type": {{ entity.type | jsonstr }}}'
+                hx-target="#pinned-entities-list"
+                hx-swap="outerHTML">☆</button>
+        {% endif %}
+      </div>
+      {% if entity.description %}
+      <p class="entity-desc">{{ entity.description[:180] }}{% if entity.description | length > 180 %}…{% endif %}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="context-empty">
+  No Nexus context found for this task.
+  <button class="btn-link"
+          hx-post="/tasks/{{ task_id }}/context/refresh"
+          hx-target="#nexus-context"
+          hx-swap="innerHTML">Try again</button>
+</div>
+{% endif %}

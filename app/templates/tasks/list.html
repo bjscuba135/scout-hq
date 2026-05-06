@@ -7,44 +7,68 @@
 {% endblock %}
 
 {% block content %}
-{# ── Filter bar ──────────────────────────────────────────────────────────── #}
-<div class="filter-bar">
-  <div class="filter-group">
-    <span class="filter-label">Category</span>
-    <a href="/?{% if current_status %}status={{ current_status }}{% endif %}"
-       class="chip {% if not current_category %}active{% endif %}">All</a>
-    {% for cat in categories %}
-      <a href="/?category={{ cat }}{% if current_status %}&status={{ current_status }}{% endif %}"
-         class="chip {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
-    {% endfor %}
-  </div>
+<div class="list-layout">
 
-  <span class="filter-divider">|</span>
+  {# ── Main column ── #}
+  <div class="list-main">
 
-  <div class="filter-group">
-    <span class="filter-label">Status</span>
-    <a href="/?{% if current_category %}category={{ current_category }}{% endif %}"
-       class="chip {% if not current_status %}active{% endif %}">All</a>
-    {% for s in statuses %}
-      <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
-         class="chip {% if current_status == s %}active{% endif %}">{{ s }}</a>
-    {% endfor %}
-  </div>
-</div>
+    {# ── Filter bar ── #}
+    <div class="filter-bar">
+      <div class="filter-group">
+        <span class="filter-label">Category</span>
+        <a href="/?{% if current_status %}status={{ current_status }}{% endif %}"
+           class="chip {% if not current_category %}active{% endif %}">All</a>
+        {% for cat in categories %}
+          <a href="/?category={{ cat }}{% if current_status %}&status={{ current_status }}{% endif %}"
+             class="chip {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
+        {% endfor %}
+      </div>
 
-{# ── Task table ──────────────────────────────────────────────────────────── #}
-<table class="task-table">
-  <thead>
-    <tr>
-      <th class="col-priority">Priority</th>
-      <th>Title</th>
-      <th class="col-status">Status</th>
-      <th class="col-category">Category</th>
-      <th class="col-due">Due</th>
-    </tr>
-  </thead>
-  <tbody id="task-list">
-    {% include "_partials/task_list_body.html" %}
-  </tbody>
-</table>
+      <span class="filter-divider">|</span>
+
+      <div class="filter-group">
+        <span class="filter-label">Status</span>
+        <a href="/?{% if current_category %}category={{ current_category %}{% endif %}"
+           class="chip {% if not current_status %}active{% endif %}">All</a>
+        {% for s in statuses %}
+          <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
+             class="chip {% if current_status == s %}active{% endif %}">{{ s }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── Task table ── #}
+    <table class="task-table">
+      <thead>
+        <tr>
+          <th class="col-priority">Priority</th>
+          <th>Title</th>
+          <th class="col-status">Status</th>
+          <th class="col-category">Category</th>
+          <th class="col-due">Due</th>
+        </tr>
+      </thead>
+      <tbody id="task-list">
+        {% include "_partials/task_list_body.html" %}
+      </tbody>
+    </table>
+
+  </div>{# end list-main #}
+
+  {# ── Sidebar ── #}
+  <aside class="list-sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-heading">
+        ⭐ Pinned entities
+        <a href="/entities" class="sidebar-manage-link">manage</a>
+      </div>
+      <div hx-get="/entities/pinned"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <p class="sidebar-empty">Loading…</p>
+      </div>
+    </div>
+  </aside>
+
+</div>{# end list-layout #}
 {% endblock %}

@@ -6,17 +6,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from pathlib import Path
 from pydantic import BaseModel, field_validator
 from sqlalchemy import case, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Task
 from app.db.session import get_session
+from app.templating import get_templates
 
 router = APIRouter(tags=["tasks"])
-templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
+templates = get_templates()
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 

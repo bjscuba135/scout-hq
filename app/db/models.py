@@ -6,6 +6,7 @@ from datetime import date, datetime, timezone
 from sqlalchemy import (
     Boolean,
     Date,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -53,6 +54,9 @@ class Task(Base):
     )
     contexts: Mapped[list[TaskContext]] = relationship(
         "TaskContext", back_populates="task", cascade="all, delete-orphan"
+    )
+    entities: Mapped[list[TaskEntity]] = relationship(
+        "TaskEntity", back_populates="task", cascade="all, delete-orphan"
     )
 
     __table_args__ = (
@@ -113,6 +117,44 @@ class TaskContext(Base):
 
     __table_args__ = (
         Index("task_context_task_idx", "task_id", "source"),
+    )
+
+
+class EntityPin(Base):
+    """User-pinned LightRAG entities shown in the dashboard sidebar."""
+
+    __tablename__ = "entity_pin"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    entity_name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    entity_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pin_level: Mapped[str] = mapped_column(Text, nullable=False, default="favourite")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=False, default=_utcnow
+    )
+
+    __table_args__ = (Index("entity_pin_name_idx", "entity_name"),)
+
+
+class TaskEntity(Base):
+    """Auto-linked or manually linked entities for a task (from Nexus context)."""
+
+    __tablename__ = "task_entity"
+
+    task_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("task.id", ondelete="CASCADE"), primary_key=True
+    )
+    entity_name: Mapped[str] = mapped_column(Text, nullable=False, primary_key=True)
+    entity_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(Text, nullable=False, default="auto")
+    relevance: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    task: Mapped[Task] = relationship("Task", back_populates="entities")
+
+    __table_args__ = (
+        Index("task_entity_task_idx", "task_id"),
+        Index("task_entity_name_idx", "entity_name"),
     )
 
 
