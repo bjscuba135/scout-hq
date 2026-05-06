@@ -321,6 +321,24 @@ details.ep-suggest-details summary::-webkit-details-marker { display: none; }
   padding-top: 0.5rem;
 }
 
+/* Entity panel search */
+.ep-search-input {
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  font-family: inherit;
+  margin-bottom: 0.5rem;
+  background: var(--bg);
+}
+.ep-search-input:focus { outline: none; border-color: var(--scout-purple); }
+
+/* Attached item audit trail */
+.attached-item { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+.attached-item-main { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; width: 100%; }
+.attach-audit { font-size: 0.7rem; color: var(--text-muted); padding-left: 0.15rem; }
+
 /* ── Task detail ─────────────────────────────────────────────────────────── */
 /* max-width handled by .task-detail-layout now */
 .breadcrumb {

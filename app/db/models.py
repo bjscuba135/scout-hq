@@ -149,6 +149,8 @@ class TaskEntity(Base):
     entity_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     source: Mapped[str] = mapped_column(Text, nullable=False, default="auto")
     relevance: Mapped[float | None] = mapped_column(Float, nullable=True)
+    attached_by: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attached_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
     task: Mapped[Task] = relationship("Task", back_populates="entities")
 

@@ -1,6 +1,7 @@
-"""Task Nexus context — fetch, cache, refresh, and entity attach/detach."""
+"""Task Nexus context — fetch, cache, refresh, entity attach/detach/search."""
 from __future__ import annotations
 
+import base64
 import json
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -19,6 +20,20 @@ from app.templating import get_templates
 
 router = APIRouter(tags=["context"])
 Session = Annotated[AsyncSession, Depends(get_session)]
+
+
+# ── Auth helper ───────────────────────────────────────────────────────────────
+
+def _request_user(request: Request) -> str:
+    """Extract username from Basic Auth header (never raises)."""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Basic "):
+        try:
+            decoded = base64.b64decode(auth[6:]).decode("utf-8")
+            return decoded.split(":", 1)[0] or "unknown"
+        except Exception:
+            pass
+    return "unknown"
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
@@ -244,6 +259,9 @@ async def attach_entities(
     if not task:
         raise HTTPException(404, "Task not found")
 
+    actor = _request_user(request)
+    now = datetime.now(timezone.utc)
+
     for name in data.entity_names:
         name = name.strip()
         if not name:
@@ -260,10 +278,51 @@ async def attach_entities(
                     entity_name=name,
                     source="manual",
                     relevance=1.0,
+                    attached_by=actor,
+                    attached_at=now,
                 )
             )
     await session.commit()
     return await _render_ep(request, task_id, session, task)
+
+
+@router.get("/tasks/{task_id}/entities-panel/search", response_class=HTMLResponse)
+async def search_entities_for_panel(
+    request: Request, task_id: uuid.UUID, session: Session, q: str = ""
+):
+    """Live search for entities to attach — returns suggest-list HTML fragment."""
+    templates = get_templates()
+
+    # When query is cleared, restore default suggestions
+    if not q or len(q.strip()) < 2:
+        task = await session.get(Task, task_id)
+        if not task:
+            raise HTTPException(404, "Task not found")
+        data = await _get_panel_data(task, session)
+        return templates.TemplateResponse(
+            request,
+            "_partials/ep_suggest_content.html",
+            {"suggestions": data["suggestions"], "task_id": str(task_id), "searching": False},
+        )
+
+    # Search LightRAG entity labels
+    names = await get_nexus_client().search_entities(q.strip(), limit=15)
+
+    # Filter out already-attached
+    result = await session.execute(
+        select(TaskEntity.entity_name).where(TaskEntity.task_id == task_id)
+    )
+    attached_names = {row[0] for row in result}
+    names = [n for n in names if n not in attached_names]
+
+    # Build minimal entity dicts (search API returns names only, no type/desc)
+    suggestions = [{"name": n, "type": "", "description": ""} for n in names]
+
+    return templates.TemplateResponse(
+        request,
+        "_partials/ep_suggest_content.html",
+        {"suggestions": suggestions, "task_id": str(task_id), "searching": True, "q": q},
+    )
 
 
 @router.post("/tasks/{task_id}/entities/detach", response_class=HTMLResponse)

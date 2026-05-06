@@ -28,12 +28,10 @@ function hideEdit(hideId, showId) {
 // ── Entity suggestion type filter (client-side) ───────────────────────────────
 
 function filterSuggest(btn, type) {
-  // Update active chip
   btn.closest('.ep-type-chips').querySelectorAll('.chip').forEach(function(c) {
     c.classList.remove('active');
   });
   btn.classList.add('active');
-  // Show/hide suggest items
   var body = btn.closest('.ep-suggest-body');
   if (!body) return;
   body.querySelectorAll('.suggest-item').forEach(function(item) {
@@ -41,6 +39,13 @@ function filterSuggest(btn, type) {
     item.style.display = matches ? '' : 'none';
   });
 }
+
+// Hide type filter chips while the search input has a value, restore when cleared
+document.body.addEventListener('input', function(evt) {
+  if (!evt.target.classList.contains('ep-search-input')) return;
+  var chips = document.getElementById('ep-type-chips');
+  if (chips) chips.style.display = evt.target.value.trim() ? 'none' : '';
+});
 
 // ── Copy task as prompt ───────────────────────────────────────────────────────
 

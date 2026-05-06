@@ -15,19 +15,27 @@
   <div class="attached-list">
     {% for e in attached %}
     <div class="attached-item">
-      {% if e.entity_type %}
-      <span class="entity-type-badge type-{{ e.entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.entity_type }}</span>
+      <div class="attached-item-main">
+        {% if e.entity_type %}
+        <span class="entity-type-badge type-{{ e.entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.entity_type }}</span>
+        {% endif %}
+        <a href="/entities/{{ e.entity_name | urlencode }}" class="entity-name">{{ e.entity_name }}</a>
+        {% if e.source == 'auto' %}
+        <span class="source-auto-badge" title="Auto-linked from Nexus">auto</span>
+        {% endif %}
+        <button class="btn-unpin"
+                title="Detach"
+                hx-post="/tasks/{{ task_id }}/entities/detach"
+                hx-vals='{"entity_name": {{ e.entity_name | jsonstr }}}'
+                hx-target="#entities-panel"
+                hx-swap="innerHTML">×</button>
+      </div>
+      {% if e.attached_by or e.attached_at %}
+      <div class="attach-audit">
+        {% if e.attached_by %}{{ e.attached_by }}{% endif %}
+        {% if e.attached_at %} · {{ e.attached_at.strftime('%d %b %H:%M') }}{% endif %}
+      </div>
       {% endif %}
-      <a href="/entities/{{ e.entity_name | urlencode }}" class="entity-name">{{ e.entity_name }}</a>
-      {% if e.source == 'auto' %}
-      <span class="source-auto-badge" title="Auto-linked from Nexus context">auto</span>
-      {% endif %}
-      <button class="btn-unpin"
-              title="Detach"
-              hx-post="/tasks/{{ task_id }}/entities/detach"
-              hx-vals='{"entity_name": {{ e.entity_name | jsonstr }}}'
-              hx-target="#entities-panel"
-              hx-swap="innerHTML">×</button>
     </div>
     {% endfor %}
   </div>
@@ -41,12 +49,23 @@
   <summary class="ep-heading">🔍 Nexus suggestions</summary>
 
   <div class="ep-suggest-body">
-    {% if suggestions %}
 
-    {# Type filter chips — client-side show/hide #}
+    {# Search box #}
+    <input type="search"
+           class="ep-search-input"
+           placeholder="Search all Nexus entities…"
+           autocomplete="off"
+           hx-get="/tasks/{{ task_id }}/entities-panel/search"
+           hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#ep-suggest-results"
+           hx-swap="innerHTML"
+           hx-include="[name='q']"
+           name="q">
+
+    {# Type filter chips — hidden while searching #}
     {% set types = suggestions | map(attribute='type') | select | unique | list | sort %}
     {% if types %}
-    <div class="ep-type-chips">
+    <div class="ep-type-chips" id="ep-type-chips">
       <button class="chip active" onclick="filterSuggest(this,'')" data-type="">All</button>
       {% for t in types %}
       <button class="chip" onclick="filterSuggest(this,'{{ t | lower }}')" data-type="{{ t | lower }}">{{ t | capitalize }}</button>
@@ -54,33 +73,18 @@
     </div>
     {% endif %}
 
+    {# Suggest list + attach form #}
     <form hx-post="/tasks/{{ task_id }}/entities/attach"
           hx-target="#entities-panel"
           hx-swap="innerHTML"
           id="ep-attach-form">
-      <div class="suggest-list">
-        {% for e in suggestions %}
-        <label class="suggest-item" data-entity-type="{{ e.type | lower }}">
-          <input type="checkbox" name="entity_names" value="{{ e.name | e }}" class="entity-cb">
-          <span class="suggest-item-body">
-            <span class="suggest-name">{{ e.name }}</span>
-            {% if e.type %}
-            <span class="entity-type-badge type-{{ e.type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.type }}</span>
-            {% endif %}
-            {% if e.description %}
-            <span class="suggest-desc">{{ e.description[:90] }}{% if e.description | length > 90 %}…{% endif %}</span>
-            {% endif %}
-          </span>
-        </label>
-        {% endfor %}
+      <div id="ep-suggest-results">
+        {% include "_partials/ep_suggest_content.html" %}
       </div>
       <div class="ep-attach-actions">
         <button type="submit" class="btn btn-primary btn-sm">Attach selected →</button>
       </div>
     </form>
 
-    {% else %}
-    <p class="ep-empty" style="margin-top:0.5rem">No further suggestions from Nexus.</p>
-    {% endif %}
   </div>
 </details>

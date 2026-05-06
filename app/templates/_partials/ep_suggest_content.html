@@ -1,0 +1,26 @@
+{#
+  Suggest list content — swapped into #ep-suggest-results by live search.
+  Used by both default suggestions (searching=False) and search results (searching=True).
+#}
+{% if suggestions %}
+<div class="suggest-list">
+  {% for e in suggestions %}
+  <label class="suggest-item" data-entity-type="{{ e.type | lower }}">
+    <input type="checkbox" name="entity_names" value="{{ e.name | e }}" class="entity-cb">
+    <span class="suggest-item-body">
+      <span class="suggest-name">{{ e.name }}</span>
+      {% if e.type %}
+      <span class="entity-type-badge type-{{ e.type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.type }}</span>
+      {% endif %}
+      {% if e.description %}
+      <span class="suggest-desc">{{ e.description[:90] }}{% if e.description | length > 90 %}…{% endif %}</span>
+      {% endif %}
+    </span>
+  </label>
+  {% endfor %}
+</div>
+{% elif searching %}
+<p class="ep-empty" style="margin:0.4rem 0">No entities found for "{{ q }}".</p>
+{% else %}
+<p class="ep-empty" style="margin:0.4rem 0">No further suggestions from Nexus.</p>
+{% endif %}
