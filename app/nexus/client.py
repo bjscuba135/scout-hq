@@ -112,6 +112,67 @@ class NexusClient:
             logger.warning("LightRAG popular_entities failed: %s", exc)
             return []
 
+    async def get_entity_info(self, entity_name: str) -> dict[str, str]:
+        """Return {'entity_name', 'entity_type', 'description'} for a named entity.
+
+        Uses POST /query with only_need_context=True which embeds raw Knowledge Graph
+        JSON in the text response.  We scan those JSON lines for an exact name match,
+        falling back to the first entity found if no exact match exists.
+
+        Example line format in the response text:
+            {"entity": "Online Scout Manager", "type": "concept", "description": "..."}
+        """
+        import json as _json
+        import re as _re
+
+        empty = {"entity_name": entity_name, "entity_type": "", "description": ""}
+        try:
+            token = await self._get_token()
+            async with httpx.AsyncClient(timeout=15) as client:
+                r = await client.post(
+                    f"{self.base_url}/query",
+                    json={"query": entity_name, "mode": "local", "only_need_context": True},
+                    headers=self._headers(token),
+                )
+                r.raise_for_status()
+                text = r.json().get("response", "")
+        except Exception as exc:
+            logger.warning("LightRAG get_entity_info failed: %s", exc)
+            return empty
+
+        name_lower = entity_name.lower()
+        first_hit: dict | None = None
+
+        for line in text.splitlines():
+            line = line.strip()
+            # Lines look like: {"entity": "...", "type": "...", "description": "..."}
+            if not line.startswith("{") or '"entity"' not in line:
+                continue
+            try:
+                obj = _json.loads(line)
+            except _json.JSONDecodeError:
+                continue
+
+            if first_hit is None:
+                first_hit = obj
+
+            if obj.get("entity", "").lower() == name_lower:
+                return {
+                    "entity_name": obj.get("entity", entity_name),
+                    "entity_type": obj.get("type", ""),
+                    "description": obj.get("description", ""),
+                }
+
+        # No exact match — return first entity as fallback context
+        if first_hit:
+            return {
+                "entity_name": first_hit.get("entity", entity_name),
+                "entity_type": first_hit.get("type", ""),
+                "description": first_hit.get("description", ""),
+            }
+
+        return empty
+
     async def health(self) -> bool:
         """Return True if LightRAG is reachable."""
         try:

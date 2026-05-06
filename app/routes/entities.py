@@ -126,29 +126,17 @@ async def entity_detail(request: Request, entity_name: str, session: Session):
     )
     pin = pin_result.scalar_one_or_none()
 
-    # hybrid mode gives better recall for specific named entities than local
     client = get_nexus_client()
-    data = await client.query_context(entity_name, mode="hybrid")
-    raw_entities = data.get("entities", [])
 
-    name_lower = entity_name.lower()
+    # get_entity_info uses /query with only_need_context=True and parses the raw
+    # Knowledge Graph JSON lines — exact name match, so we get the right entity.
+    info = await client.get_entity_info(entity_name)
+    description = info.get("description", "")
 
-    # 1. Exact match, 2. substring match (either direction), 3. first result
-    def _match_score(e: dict) -> int:
-        n = e.get("entity_name", "").lower()
-        if n == name_lower:
-            return 0
-        if name_lower in n or n in name_lower:
-            return 1
-        return 2
-
-    ranked = sorted(raw_entities, key=_match_score)
-    primary = ranked[0] if ranked else None
-    description = (primary.get("description") or "") if primary else ""
-
-    # Entity type: pin table → LightRAG result → task_entity table
-    entity_type = (pin.entity_type if pin else None) or (
-        primary.get("entity_type") if primary else None
+    # Entity type: pin table → get_entity_info result → task_entity table
+    entity_type = (
+        (pin.entity_type if pin else None)
+        or info.get("entity_type") or None
     )
     if not entity_type:
         te_type = await session.execute(
@@ -162,10 +150,11 @@ async def entity_detail(request: Request, entity_name: str, session: Session):
         row = te_type.first()
         entity_type = row[0] if row else None
 
-    # Related = everything that isn't the primary match (up to 5)
+    # Related entities: use query_context (local) and exclude primary
+    ctx_data = await client.query_context(entity_name, mode="local")
     related = [
-        e for e in raw_entities
-        if e.get("entity_name", "").lower() != (primary.get("entity_name", "").lower() if primary else "")
+        e for e in ctx_data.get("entities", [])
+        if e.get("entity_name", "").lower() != entity_name.lower()
     ][:5]
 
     # Tasks linked to this entity (open/waiting only)
