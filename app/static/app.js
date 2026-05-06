@@ -5,15 +5,22 @@
 // ── Inline edit toggles ───────────────────────────────────────────────────────
 
 function showEdit(showId, hideId) {
-  const show = document.getElementById(showId);
-  const hide = document.getElementById(hideId);
+  // Close any other open edit form first so only one is ever active at a time
+  document.querySelectorAll('[id$="-edit-form"]').forEach(function(form) {
+    if (form.id !== showId) form.style.display = 'none';
+  });
+  document.querySelectorAll('[id$="-display"]').forEach(function(disp) {
+    if (disp.id !== hideId) disp.style.display = '';
+  });
+  var show = document.getElementById(showId);
+  var hide = document.getElementById(hideId);
   if (show) show.style.display = '';
   if (hide) hide.style.display = 'none';
 }
 
 function hideEdit(hideId, showId) {
-  const hide = document.getElementById(hideId);
-  const show = document.getElementById(showId);
+  var hide = document.getElementById(hideId);
+  var show = document.getElementById(showId);
   if (hide) hide.style.display = 'none';
   if (show) show.style.display = '';
 }
