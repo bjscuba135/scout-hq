@@ -28,7 +28,7 @@
 
       <div class="filter-group">
         <span class="filter-label">Status</span>
-        <a href="/?{% if current_category %}category={{ current_category %}{% endif %}"
+        <a href="/?{% if current_category %}category={{ current_category }}{% endif %}"
            class="chip {% if not current_status %}active{% endif %}">All</a>
         {% for s in statuses %}
           <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
