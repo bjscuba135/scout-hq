@@ -41,6 +41,11 @@ class Task(Base):
     owner: Mapped[str] = mapped_column(Text, nullable=False, default="ben")
     source: Mapped[str] = mapped_column(Text, nullable=False, default="manual")
     source_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("task.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     requires_approval: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, default=_utcnow
@@ -58,12 +63,24 @@ class Task(Base):
     entities: Mapped[list[TaskEntity]] = relationship(
         "TaskEntity", back_populates="task", cascade="all, delete-orphan"
     )
+    parent: Mapped["Task | None"] = relationship(
+        "Task",
+        foreign_keys="[Task.parent_id]",
+        back_populates="children",
+        remote_side="[Task.id]",
+    )
+    children: Mapped[list["Task"]] = relationship(
+        "Task",
+        foreign_keys="[Task.parent_id]",
+        back_populates="parent",
+    )
 
     __table_args__ = (
         Index("task_status_idx", "status"),
         Index("task_owner_idx", "owner"),
         Index("task_due_date_idx", "due_date"),
         Index("task_source_ref_idx", "source", "source_ref"),
+        Index("task_parent_idx", "parent_id"),
     )
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -29,6 +30,7 @@ class InboundPayload(BaseModel):
     due_date: date | None = None
     suggested_owner: str = "ben"
     requires_approval: bool = False
+    parent_id: uuid.UUID | None = None
 
 
 @router.post("/inbound", status_code=200)
@@ -71,6 +73,7 @@ async def inbound_webhook(
         existing.due_date          = payload.due_date
         existing.owner             = payload.suggested_owner
         existing.requires_approval = payload.requires_approval
+        existing.parent_id         = payload.parent_id
         await session.commit()
         return {"action": "updated", "id": str(existing.id)}
 
@@ -85,6 +88,7 @@ async def inbound_webhook(
         source            = source_system,
         source_ref        = source_ref,
         requires_approval = payload.requires_approval,
+        parent_id         = payload.parent_id,
     )
     session.add(task)
     await session.commit()

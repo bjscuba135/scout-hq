@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.db import models  # noqa: F401 — registers mappers before alembic runs
-from app.routes import context, entities, tasks, webhooks
+from app.routes import api, context, entities, tasks, webhooks
 
 APP_DIR = Path(__file__).parent
 
@@ -76,6 +76,7 @@ app.include_router(tasks.router)
 app.include_router(webhooks.router)
 app.include_router(context.router)
 app.include_router(entities.router)
+app.include_router(api.router)
 
 
 @app.get("/healthz", tags=["ops"])

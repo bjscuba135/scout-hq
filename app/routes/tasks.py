@@ -51,6 +51,7 @@ class TaskPatch(BaseModel):
     due_date: date | None = None
     owner: str | None = None
     requires_approval: bool | None = None
+    parent_id: uuid.UUID | None = None
 
     @field_validator("due_date", mode="before")
     @classmethod
