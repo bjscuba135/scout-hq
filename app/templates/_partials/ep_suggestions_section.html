@@ -1,6 +1,7 @@
 {#
   Suggestions section — swapped into #ep-suggestions-wrap by the slow endpoint.
-  Contains search + type filter + attach form. Entirely self-contained.
+  Each entity has its own + Attach button (hx-vals, same pattern as detach).
+  No form/checkbox/json-enc involved — matches the working detach pattern exactly.
 #}
 
 {# Search box #}
@@ -14,7 +15,7 @@
        hx-target="#ep-suggest-results"
        hx-swap="innerHTML">
 
-{# Type filter chips — hidden while searching #}
+{# Type filter chips — client-side show/hide #}
 {% set types = suggestions | map(attribute='type') | select | unique | list | sort %}
 {% if types %}
 <div class="ep-type-chips" id="ep-type-chips">
@@ -25,17 +26,7 @@
 </div>
 {% endif %}
 
-{# Attach form — wraps the suggest list so checkboxes are captured on submit #}
-<form id="ep-attach-form"
-      hx-post="/tasks/{{ task_id }}/entities/attach"
-      hx-target="#entities-panel"
-      hx-swap="innerHTML"
-      hx-indicator="#ep-attaching">
-  <div id="ep-suggest-results">
-    {% include "_partials/ep_suggest_content.html" %}
-  </div>
-  <div class="ep-attach-actions">
-    <button type="submit" class="btn btn-primary btn-sm">Attach selected →</button>
-    <span id="ep-attaching" class="htmx-indicator ep-attaching-msg">Attaching…</span>
-  </div>
-</form>
+{# Suggest list — per-entity attach buttons, no form needed #}
+<div id="ep-suggest-results">
+  {% include "_partials/ep_suggest_content.html" %}
+</div>

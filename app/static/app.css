@@ -293,32 +293,27 @@ details.ep-suggest-details summary::-webkit-details-marker { display: none; }
 .suggest-item {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 0.4rem;
   padding: 0.3rem 0.4rem;
   border-radius: var(--radius);
-  cursor: pointer;
   font-size: 0.82rem;
   line-height: 1.3;
 }
 .suggest-item:hover { background: var(--bg); }
-.suggest-item input[type="checkbox"] {
-  margin-top: 0.15rem;
-  flex-shrink: 0;
-  cursor: pointer;
-}
 .suggest-item-body {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
+  flex: 1;
 }
 .suggest-name { font-weight: 500; color: var(--text); word-break: break-word; }
 .suggest-desc { font-size: 0.74rem; color: var(--text-muted); line-height: 1.4; }
-.ep-attach-actions {
-  display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid var(--border);
-  padding-top: 0.5rem;
+.ep-attach-one {
+  flex-shrink: 0;
+  white-space: nowrap;
+  align-self: flex-start;
 }
 
 /* Suggestions section heading (replaces <details> summary) */
