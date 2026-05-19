@@ -115,63 +115,54 @@ class NexusClient:
     async def get_entity_info(self, entity_name: str) -> dict[str, str]:
         """Return {'entity_name', 'entity_type', 'description'} for a named entity.
 
-        Uses POST /query with only_need_context=True which embeds raw Knowledge Graph
-        JSON in the text response.  We scan those JSON lines for an exact name match,
-        falling back to the first entity found if no exact match exists.
+        Uses GET /graphs?label=<name> which returns the neighbourhood subgraph.
+        The response includes all related nodes; the target entity appears as the
+        node whose 'id' exactly matches the requested name.
 
-        Example line format in the response text:
-            {"entity": "Online Scout Manager", "type": "concept", "description": "..."}
+        LightRAG stores multiple descriptions separated by '<SEP>' — we take the
+        longest segment as it is typically the most complete.
         """
-        import json as _json
-        import re as _re
-
         empty = {"entity_name": entity_name, "entity_type": "", "description": ""}
         try:
             token = await self._get_token()
             async with httpx.AsyncClient(timeout=15) as client:
-                r = await client.post(
-                    f"{self.base_url}/query",
-                    json={"query": entity_name, "mode": "local", "only_need_context": True},
+                r = await client.get(
+                    f"{self.base_url}/graphs",
+                    params={"label": entity_name},
                     headers=self._headers(token),
                 )
                 r.raise_for_status()
-                text = r.json().get("response", "")
+                data = r.json()
         except Exception as exc:
             logger.warning("LightRAG get_entity_info failed: %s", exc)
             return empty
 
         name_lower = entity_name.lower()
-        first_hit: dict | None = None
+        nodes = data.get("nodes", [])
 
-        for line in text.splitlines():
-            line = line.strip()
-            # Lines look like: {"entity": "...", "type": "...", "description": "..."}
-            if not line.startswith("{") or '"entity"' not in line:
-                continue
-            try:
-                obj = _json.loads(line)
-            except _json.JSONDecodeError:
-                continue
+        # Find the node whose id is an exact case-insensitive match
+        primary = next(
+            (n for n in nodes if n.get("id", "").lower() == name_lower),
+            None,
+        )
+        if not primary:
+            return empty
 
-            if first_hit is None:
-                first_hit = obj
+        props = primary.get("properties", {})
+        raw_desc = props.get("description", "")
 
-            if obj.get("entity", "").lower() == name_lower:
-                return {
-                    "entity_name": obj.get("entity", entity_name),
-                    "entity_type": obj.get("type", ""),
-                    "description": obj.get("description", ""),
-                }
+        # Pick the longest <SEP>-separated segment (most complete description)
+        if raw_desc and "<SEP>" in raw_desc:
+            parts = [p.strip() for p in raw_desc.split("<SEP>") if p.strip()]
+            description = max(parts, key=len) if parts else raw_desc
+        else:
+            description = raw_desc
 
-        # No exact match — return first entity as fallback context
-        if first_hit:
-            return {
-                "entity_name": first_hit.get("entity", entity_name),
-                "entity_type": first_hit.get("type", ""),
-                "description": first_hit.get("description", ""),
-            }
-
-        return empty
+        return {
+            "entity_name": primary.get("id", entity_name),
+            "entity_type": props.get("entity_type", ""),
+            "description": description,
+        }
 
     async def health(self) -> bool:
         """Return True if LightRAG is reachable."""
