@@ -1,7 +1,7 @@
 {#
-  Right-column entities panel for the task detail page.
+  Right-column entities panel — FAST path: DB only.
+  Suggestions are lazy-loaded by #ep-suggestions-wrap (separate slow request).
   Target: #entities-panel innerHTML
-  Returned by: GET /tasks/{id}/entities-panel, POST attach, POST detach
 #}
 
 {# ── Attached entities ── #}
@@ -44,49 +44,13 @@
   {% endif %}
 </div>
 
-{# ── Nexus suggestions (expandable) ── #}
-<details class="ep-suggest-details" {% if not attached %}open{% endif %}>
-  <summary class="ep-heading">🔍 Nexus suggestions</summary>
-
-  <div class="ep-suggest-body">
-
-    {# Search box #}
-    <input type="search"
-           class="ep-search-input"
-           placeholder="Search all Nexus entities…"
-           autocomplete="off"
-           hx-get="/tasks/{{ task_id }}/entities-panel/search"
-           hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#ep-suggest-results"
-           hx-swap="innerHTML"
-           hx-include="[name='q']"
-           name="q">
-
-    {# Type filter chips — hidden while searching #}
-    {% set types = suggestions | map(attribute='type') | select | unique | list | sort %}
-    {% if types %}
-    <div class="ep-type-chips" id="ep-type-chips">
-      <button class="chip active" onclick="filterSuggest(this,'')" data-type="">All</button>
-      {% for t in types %}
-      <button class="chip" onclick="filterSuggest(this,'{{ t | lower }}')" data-type="{{ t | lower }}">{{ t | capitalize }}</button>
-      {% endfor %}
-    </div>
-    {% endif %}
-
-    {# Suggest list + attach form #}
-    <form hx-post="/tasks/{{ task_id }}/entities/attach"
-          hx-target="#entities-panel"
-          hx-swap="innerHTML"
-          hx-indicator="#ep-attaching"
-          id="ep-attach-form">
-      <div id="ep-suggest-results">
-        {% include "_partials/ep_suggest_content.html" %}
-      </div>
-      <div class="ep-attach-actions">
-        <button type="submit" class="btn btn-primary btn-sm">Attach selected →</button>
-        <span id="ep-attaching" class="htmx-indicator ep-attaching-msg">Attaching…</span>
-      </div>
-    </form>
-
+{# ── Nexus suggestions — lazy-loaded separately (slow LightRAG path) ── #}
+<div class="ep-suggest-header">🔍 Nexus suggestions</div>
+<div id="ep-suggestions-wrap"
+     hx-get="/tasks/{{ task_id }}/entities-panel/suggestions"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+  <div class="context-loading" style="padding:0.5rem 0">
+    <span class="spinner">⟳</span> Loading suggestions…
   </div>
-</details>
+</div>

@@ -27,7 +27,6 @@ def _task_to_dict(task: Task) -> dict[str, Any]:
         "owner": task.owner,
         "source": task.source,
         "source_ref": task.source_ref,
-        "parent_id": str(task.parent_id) if task.parent_id else None,
         "requires_approval": task.requires_approval,
         "created_at": task.created_at.isoformat(),
         "updated_at": task.updated_at.isoformat(),

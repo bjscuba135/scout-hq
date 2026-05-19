@@ -321,6 +321,16 @@ details.ep-suggest-details summary::-webkit-details-marker { display: none; }
   padding-top: 0.5rem;
 }
 
+/* Suggestions section heading (replaces <details> summary) */
+.ep-suggest-header {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  margin: 0.85rem 0 0.5rem;
+}
+
 /* Attach loading indicator */
 .ep-attaching-msg {
   font-size: 0.78rem;

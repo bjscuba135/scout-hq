@@ -1,0 +1,41 @@
+{#
+  Suggestions section — swapped into #ep-suggestions-wrap by the slow endpoint.
+  Contains search + type filter + attach form. Entirely self-contained.
+#}
+
+{# Search box #}
+<input type="search"
+       class="ep-search-input"
+       placeholder="Search all Nexus entities…"
+       autocomplete="off"
+       name="q"
+       hx-get="/tasks/{{ task_id }}/entities-panel/search"
+       hx-trigger="keyup changed delay:300ms, search"
+       hx-target="#ep-suggest-results"
+       hx-swap="innerHTML">
+
+{# Type filter chips — hidden while searching #}
+{% set types = suggestions | map(attribute='type') | select | unique | list | sort %}
+{% if types %}
+<div class="ep-type-chips" id="ep-type-chips">
+  <button class="chip active" onclick="filterSuggest(this,'')" data-type="">All</button>
+  {% for t in types %}
+  <button class="chip" onclick="filterSuggest(this,'{{ t | lower }}')" data-type="{{ t | lower }}">{{ t | capitalize }}</button>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# Attach form — wraps the suggest list so checkboxes are captured on submit #}
+<form id="ep-attach-form"
+      hx-post="/tasks/{{ task_id }}/entities/attach"
+      hx-target="#entities-panel"
+      hx-swap="innerHTML"
+      hx-indicator="#ep-attaching">
+  <div id="ep-suggest-results">
+    {% include "_partials/ep_suggest_content.html" %}
+  </div>
+  <div class="ep-attach-actions">
+    <button type="submit" class="btn btn-primary btn-sm">Attach selected →</button>
+    <span id="ep-attaching" class="htmx-indicator ep-attaching-msg">Attaching…</span>
+  </div>
+</form>
