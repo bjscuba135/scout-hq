@@ -1,4 +1,4 @@
-// Scout HQ — minimal JS escape hatch
+// Nexus HQ — minimal JS escape hatch
 // json-enc extension (loaded in base.html) handles PATCH/POST → JSON automatically.
 // This file provides small UI utilities only.
 
@@ -68,7 +68,7 @@ function copyTaskAsPrompt() {
   const parts = ['Task: ' + title];
   if (meta) parts.push(meta);
   if (body) parts.push('', body);
-  parts.push('', '---', 'Context: I am the Group Lead Volunteer (GLV) at 1st Beetley Scout Group, Beetley, Norfolk.');
+  parts.push('', '---', 'Context: I am operating within The Nexus Constellation personal AI system.');
 
   const text = parts.join('\n').trim();
   _copyText(text);
@@ -110,6 +110,15 @@ function _flashCopyBtn() {
   setTimeout(function() { btn.textContent = orig; }, 2000);
 }
 
+
+// ── Tweaks: accent / mode / density — persisted in localStorage ──────────────
+
+function setTweak(key, value) {
+  const prefs = JSON.parse(localStorage.nexusPrefs || '{}');
+  prefs[key] = value;
+  localStorage.nexusPrefs = JSON.stringify(prefs);
+  document.documentElement.dataset[key] = value;
+}
 
 // ── Clear note textarea after successful note append ─────────────────────────
 

@@ -1,0 +1,98 @@
+{% import "_macros.html.j2" as nx %}
+{% set r = result %}
+
+{% if r %}
+<div class="nx-ask-result-layout">
+
+  {# ── Left: response ───────────────────────────────────────────────────── #}
+  <div class="nx-ask-response">
+
+    {# Question echo #}
+    <div class="nx-card" style="background:var(--bg-2);margin-bottom:var(--sp-5)">
+      <div class="nx-card-bd" style="color:var(--tx-3);font-size:var(--fs-sm)">
+        {{ nx.icon("search", 12) }} {{ r.query }}
+      </div>
+    </div>
+
+    {% if r.error %}
+      <div class="nx-approval" style="border-color:var(--sem-err)">
+        <span style="color:var(--sem-err);font-weight:var(--fw-semi)">Error</span>
+        <span>{{ r.error }}</span>
+      </div>
+    {% elif r.response %}
+      <div class="nx-response-body">
+        <pre style="white-space:pre-wrap;font-family:var(--ff);font-size:var(--fs-md);color:var(--tx-2);line-height:var(--lh-relaxed)">{{ r.response }}</pre>
+      </div>
+
+      {# Entity citations from references #}
+      {% if r.references %}
+      <div style="margin-top:var(--sp-5);display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+        {% for ref in r.references %}
+          {% if ref.file_path %}
+          <span class="nx-ent-tag">
+            {{ nx.icon("doc", 13) }}
+            <span style="font-size:var(--fs-xs)">{{ ref.file_path.split('/')[-1] }}</span>
+          </span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {# Suggested actions #}
+      <div class="nx-card" style="background:var(--ac-wash);border-color:var(--ac-ring);margin-top:var(--sp-6)">
+        <div class="nx-card-hd"><h3>Suggested actions</h3></div>
+        <div class="nx-card-bd" style="display:flex;gap:var(--sp-2);flex-wrap:wrap">
+          {{ nx.button("Create task from this", variant="secondary", icon="plus",
+             hx={"hx_get": "/tasks/new", "hx_target": "#drawer", "hx_swap": "innerHTML"}) }}
+          {{ nx.button("Dispatch to Claude Code", variant="secondary", icon="bolt") }}
+        </div>
+      </div>
+
+    {% else %}
+      <div style="color:var(--tx-3);font-size:var(--fs-md)">
+        No response — the knowledge base may not have relevant content yet.
+      </div>
+    {% endif %}
+  </div>
+
+  {# ── Right: metadata rail ─────────────────────────────────────────────── #}
+  <aside class="nx-ask-rail">
+    {# Query metadata #}
+    <div class="nx-card">
+      <div class="nx-card-hd"><h3>Query info</h3></div>
+      <div class="nx-card-bd" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        <div class="nx-meta-kv">
+          <span class="nx-card-eyebrow">Mode</span>
+          <span class="nx-chip">{{ r.mode }}</span>
+        </div>
+        <div class="nx-meta-kv">
+          <span class="nx-card-eyebrow">Latency</span>
+          <span class="nx-mono" style="font-size:var(--fs-sm)">{{ r.latency_ms }}ms</span>
+        </div>
+        {% if r.references %}
+        <div class="nx-meta-kv">
+          <span class="nx-card-eyebrow">Sources</span>
+          <span class="nx-mono" style="font-size:var(--fs-sm)">{{ r.references | length }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# Retrieved entities #}
+    {% if r.entities %}
+    <div class="nx-card">
+      <div class="nx-card-hd"><h3>Retrieved</h3></div>
+      <div class="nx-card-bd" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+        {% for ent in r.entities[:8] %}
+        <div style="display:flex;align-items:center;gap:var(--sp-2)">
+          {{ nx.entity_icon(ent.type if ent.type else "system", 18) }}
+          <span style="font-size:var(--fs-sm);color:var(--tx-2)">{{ ent.name if ent.name else ent }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </aside>
+
+</div>
+{% endif %}

@@ -1,0 +1,83 @@
+{% extends "_layout.html" %}
+{% import "_macros.html.j2" as nx %}
+{% set active_nav = "agents" %}
+
+{% block title %}Agents — Nexus HQ{% endblock %}
+
+{% block main %}
+<div class="nx-page">
+
+  <div class="nx-page-hd">
+    <h1 class="nx-page-title">Agents</h1>
+  </div>
+
+  {# ── Agent cards grid ─────────────────────────────────────────────────── #}
+  <div class="nx-agent-grid">
+    {% for agent in agents %}
+    <div class="nx-card nx-agent-card">
+      <div class="nx-agent-card-hd">
+        {{ nx.avatar(agent.id, agent.kind, "lg") }}
+        <div class="nx-agent-info">
+          <div class="nx-agent-name">{{ agent.name }}</div>
+          <div class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-4)">{{ agent.id }}</div>
+        </div>
+        {{ nx.status_badge(agent.status) }}
+      </div>
+      {% if agent.desc %}
+      <p style="font-size:var(--fs-sm);color:var(--tx-3);margin:var(--sp-3) 0 0">{{ agent.desc }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Run history ──────────────────────────────────────────────────────── #}
+  <div class="nx-card" style="margin-top:var(--sp-6)">
+    <div class="nx-card-hd">
+      <h3>Recent runs</h3>
+      <a href="/audit" class="nx-link" style="font-size:var(--fs-sm)">Full audit log</a>
+    </div>
+    <div class="nx-card-bd" style="padding:0">
+      <table class="nx-table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th style="width:100px">Agent</th>
+            <th style="width:80px">Started</th>
+            <th style="width:80px">Duration</th>
+            <th style="width:90px">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in runs %}
+          <tr>
+            <td style="color:var(--tx-2);font-size:var(--fs-sm)">
+              <span class="nx-mono" style="color:var(--tx-4);font-size:var(--fs-xs);margin-right:var(--sp-2)">
+                {{ run.task_id | string | truncate(8, end='') }}
+              </span>
+              {{ run.log | truncate(60) if run.log else '—' }}
+            </td>
+            <td>{{ nx.avatar(run.dispatcher) }}</td>
+            <td class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-3)">
+              {{ run.started_at.strftime('%H:%M:%S') }}
+            </td>
+            <td class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-3)">
+              {% if run.finished_at %}
+                {{ ((run.finished_at - run.started_at).total_seconds() | int) }}s
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ nx.status_badge(run.status) }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" style="text-align:center;color:var(--tx-4);padding:var(--sp-7)">
+              No runs yet
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

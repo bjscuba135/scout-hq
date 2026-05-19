@@ -1,0 +1,25 @@
+{% import "_macros.html.j2" as nx %}
+<table class="nx-table">
+  <thead>
+    <tr>
+      <th style="width:28px"></th>
+      <th style="width:72px">Priority</th>
+      <th>Title</th>
+      <th style="width:110px">Category</th>
+      <th style="width:90px">Owner</th>
+      <th style="width:90px">Due</th>
+      <th style="width:90px">Status</th>
+    </tr>
+  </thead>
+  <tbody id="task-rows">
+    {% for task in tasks %}
+      {% include "tasks/_row.html" %}
+    {% else %}
+      <tr>
+        <td colspan="7" style="text-align:center;padding:var(--sp-9);color:var(--tx-3)">
+          No tasks found
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

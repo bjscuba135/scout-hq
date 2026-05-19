@@ -9,8 +9,8 @@ dispatchers:
       osm_digest:   /webhook/osm-digest
 
   - type: claude_code
-    queue_dir: /opt/AppData/scouthq/queue/claude
-    # outbound:  scout-hq writes <run_id>.task.json
+    queue_dir: /opt/AppData/nexushq/queue/claude
+    # outbound:  nexus-hq writes <run_id>.task.json
     # inbound:   claude code writes <run_id>.result.json
 
   - type: codex_cli           # Phase 7

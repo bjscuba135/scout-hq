@@ -1,0 +1,41 @@
+{% import "_macros.html.j2" as nx %}
+<tr id="task-{{ task.id }}"
+    class="{% if task.status == 'done' %}done{% endif %}"
+    hx-get="/tasks/{{ task.id }}"
+    hx-target="#main" hx-push-url="true">
+
+  {# Checkbox — consumes click so it doesn't open the detail #}
+  <td hx-patch="/tasks/{{ task.id }}"
+      hx-vals='{"status": "{% if task.status == "done" %}open{% else %}done{% endif %}"}'
+      hx-swap="outerHTML" hx-target="#task-{{ task.id }}"
+      hx-trigger="click consume">
+    <span class="nx-check" data-on="{{ '1' if task.status == 'done' else '0' }}">
+      {{ nx.icon("check", 10) }}
+    </span>
+  </td>
+
+  <td>{{ nx.priority_badge(task.priority) }}</td>
+
+  <td class="nx-title-cell">
+    {% if task.domain %}{{ nx.domain_stripe(task.domain) }}{% endif %}
+    <span class="nx-task-title">{{ task.title }}</span>
+    {% if task.requires_approval %}
+      <span class="nx-approval-flag">⚑ approval</span>
+    {% endif %}
+  </td>
+
+  <td>{{ nx.category_chip(task.category) }}</td>
+
+  <td>
+    <span class="nx-owner">
+      {{ nx.avatar(task.owner) }}
+      <span class="nx-owner-label">{{ task.owner }}</span>
+    </span>
+  </td>
+
+  <td class="nx-mono nx-due{% if task.due_date and task.due_date < today %} overdue{% endif %}">
+    {{ task.due_date.strftime('%d %b') if task.due_date else '—' }}
+  </td>
+
+  <td>{{ nx.status_badge(task.status) }}</td>
+</tr>

@@ -15,17 +15,13 @@ router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 Session = Depends(get_session)
 
-VALID_CATEGORIES = {
-    "admin", "squirrels", "beavers", "cubs", "scouts",
-    "hut", "events", "volunteers", "finance",
-}
-
 
 class InboundPayload(BaseModel):
     source: str                          # required, format '<system>:<id>'
     title: str                           # required
     body: str | None = None
-    category: str = "admin"
+    domain: str | None = "scouting"      # scouting | personal | work
+    category: str = "admin"             # free-text label
     priority: str = "med"               # high | med | low
     due_date: date | None = None
     suggested_owner: str = "ben"
@@ -45,9 +41,6 @@ async def inbound_webhook(
 
     Auth: global Basic Auth (same credentials as the UI).
     """
-    if payload.category not in VALID_CATEGORIES:
-        raise HTTPException(400, f"Invalid category '{payload.category}'")
-
     # Split 'system:ref' → source='system', source_ref='ref'
     if ":" in payload.source:
         source_system, source_ref = payload.source.split(":", 1)
@@ -68,6 +61,7 @@ async def inbound_webhook(
     if existing:
         existing.title             = payload.title
         existing.body              = payload.body
+        existing.domain            = payload.domain
         existing.category          = payload.category
         existing.priority          = payload.priority
         existing.due_date          = payload.due_date
@@ -80,6 +74,7 @@ async def inbound_webhook(
     task = Task(
         title             = payload.title,
         body              = payload.body,
+        domain            = payload.domain,
         category          = payload.category,
         priority          = payload.priority,
         status            = "open",

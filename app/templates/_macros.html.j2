@@ -1,0 +1,293 @@
+{# ─────────────────────────────────────────────────────────────────────────
+   Nexus HQ — Jinja2 macro library
+   ─────────────────────────────────────────────────────────────────────────
+   Drop this into templates/_macros.html.j2 and import once per layout:
+
+       {% import "_macros.html.j2" as nx %}
+
+   …then call macros like Python functions:
+
+       {{ nx.button("Dispatch", variant="primary", icon="bolt") }}
+       {{ nx.priority_badge("high") }}
+       {{ nx.task_row(task, agents) }}
+
+   Conventions:
+     • Every macro renders an element that maps 1:1 to a .nx-* CSS class.
+     • Pass HTMX attributes via **attrs (rendered with `nx.attrs()` below).
+     • Icons live as a Jinja inline-SVG dict (`nx_icons`) — see /static/js/
+       in the prototype, or generate a sprite for production.
+   ───────────────────────────────────────────────────────────────────────── #}
+
+
+{# ── ICONS ─────────────────────────────────────────────────────────────── #}
+{# Inline SVG glyphs. Define ONCE in your base layout — copy from
+   components.jsx Icon() paths. In production prefer an SVG sprite. #}
+{% macro icon(name, size=14) -%}
+  {% set sw = 1.6 %}
+  <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 16 16"
+       fill="none" stroke="currentColor" stroke-width="{{ sw }}"
+       stroke-linecap="round" stroke-linejoin="round"
+       class="nx-icon nx-icon--{{ name }}">
+    {{ nx_icons[name]|safe }}
+  </svg>
+{%- endmacro %}
+
+
+{# ── HTMX ATTRS HELPER ──────────────────────────────────────────────────── #}
+{# Spread arbitrary {hx_get: "...", hx_target: "..."} into hx-get="..." etc.
+   Underscores → dashes; safe-escape values. #}
+{% macro attrs(d={}) -%}
+  {%- for k, v in d.items() -%}
+    {% if v is not none and v != false -%}
+      {{ k|replace('_','-') }}="{{ v|e }}"{{ ' ' }}
+    {%- endif -%}
+  {%- endfor -%}
+{%- endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   BUTTON
+   nx.button("Save", variant="primary", icon="check", kbd="⌘↵",
+             hx={"hx_post": "/tasks", "hx_swap": "outerHTML"})
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro button(label, variant="secondary", icon=None, kbd=None,
+                type="button", disabled=False, hx={}) %}
+  <button type="{{ type }}" class="nx-btn {{ variant }}"
+          {% if disabled %}disabled{% endif %}
+          {{ attrs(hx) }}>
+    {%- if icon %}{{ icon(icon, 14) }}{% endif %}
+    {{ label }}
+    {%- if kbd %}<span class="nx-kbd">{{ kbd }}</span>{% endif %}
+  </button>
+{% endmacro %}
+
+{% macro icon_button(icon_name, title="", hx={}) %}
+  <button type="button" class="nx-iconbtn" title="{{ title }}"
+          aria-label="{{ title }}" {{ attrs(hx) }}>
+    {{ icon(icon_name, 14) }}
+  </button>
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   BADGES
+   ════════════════════════════════════════════════════════════════════════ #}
+{% set _priority_label = {"high": "High", "med": "Med", "low": "Low"} %}
+{% macro priority_badge(value) -%}
+  <span class="nx-badge p-{{ value }}">
+    <span class="nx-dot"></span>{{ _priority_label[value] }}
+  </span>
+{%- endmacro %}
+
+{% set _status_label = {
+  "open": "Open", "in_progress": "Running", "waiting": "Awaiting",
+  "running": "Running", "done": "Done", "success": "Done",
+  "failed": "Error", "error": "Error", "awaiting": "Awaiting",
+  "idle": "Idle", "cancelled": "Cancelled", "queued": "Queued"
+} %}
+{% set _status_class = {
+  "in_progress": "running", "waiting": "awaiting", "success": "done", "failed": "error", "queued": "open"
+} %}
+{% macro status_badge(value) -%}
+  <span class="nx-badge s-{{ _status_class.get(value, value) }}">{{ _status_label.get(value, value) }}</span>
+{%- endmacro %}
+
+{% set _domain_label = {"scouting": "Scouting", "personal": "Personal", "work": "Work"} %}
+{% macro domain_pill(value) -%}
+  <span class="nx-dom" data-domain="{{ value }}">
+    <span class="nx-dot"></span>{{ _domain_label[value] }}
+  </span>
+{%- endmacro %}
+
+{% macro domain_stripe(value) -%}
+  <span class="nx-domstripe" data-domain="{{ value }}" aria-hidden="true"></span>
+{%- endmacro %}
+
+{% macro category_chip(label) -%}
+  <span class="nx-chip"><span class="nx-chip-bar"></span>{{ label }}</span>
+{%- endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   AVATAR + ENTITY ICON
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro avatar(agent_id, kind="human", size="sm") -%}
+  {% set initials = agent_id|reject("equalto", "-")|join|upper|truncate(2, true, "") %}
+  <span class="nx-avatar {% if size == 'lg' %}lg{% endif %}"
+        data-kind="{{ kind }}">{{ initials }}</span>
+{%- endmacro %}
+
+{% macro entity_icon(type, size=22) -%}
+  <span class="nx-ent-icon" data-type="{{ type }}"
+        style="width: {{ size }}px; height: {{ size }}px;">
+    {{ icon("ent_" ~ type, size * 0.62) }}
+  </span>
+{%- endmacro %}
+
+{% macro entity_tag(entity, hx={}) -%}
+  <span class="nx-ent-tag" {{ attrs(hx) }}>
+    {{ entity_icon(entity.type, 16) }}
+    <span>{{ entity.name }}</span>
+  </span>
+{%- endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   CARDS — header + body wrapper, with optional eyebrow text
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro card_open(title=None, eyebrow=None, classes="") %}
+  <div class="nx-card {{ classes }}">
+    {% if title %}
+    <div class="nx-card-hd">
+      <h3>{{ title }}</h3>
+      {% if caller is defined %}{{ caller() }}{% endif %}
+    </div>
+    {% endif %}
+    <div class="nx-card-bd">
+{% endmacro %}
+{% macro card_close() %}
+    </div>
+  </div>
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   TASK ROW — the workhorse of the Task List screen.
+   Render inside <tbody>. HTMX swap targets:
+     • Click row    → load Task Detail (hx-get="/tasks/{id}", hx-target="#main")
+     • Click check  → toggle done   (hx-patch="/tasks/{id}/done",
+                                     hx-swap="outerHTML", hx-target="closest tr")
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro task_row(task, agents) %}
+  {%- set owner = (agents|selectattr("id", "equalto", task.owner)|first) -%}
+  <tr class="{% if task.status == 'done' %}done{% endif %}
+             {% if task.id == request.query_params.get('selected') %}selected{% endif %}"
+      hx-get="/tasks/{{ task.id }}"
+      hx-target="#main" hx-push-url="true">
+
+    {# Checkbox — stops propagation so it doesn't open the detail #}
+    <td hx-patch="/tasks/{{ task.id }}/done"
+        hx-swap="outerHTML" hx-target="closest tr"
+        hx-trigger="click consume">
+      <span class="nx-check" data-on="{{ '1' if task.status == 'done' else '0' }}">
+        {{ icon("check", 10) }}
+      </span>
+    </td>
+
+    <td>{{ priority_badge(task.priority) }}</td>
+
+    <td class="truncate">
+      {{ domain_stripe(task.domain) }}
+      <span style="font-weight:500">{{ task.title }}</span>
+      {% if task.requires_approval %}
+        <span style="margin-left:8px; color:var(--sem-warn); font-size:11px">⚑ approval</span>
+      {% endif %}
+    </td>
+
+    <td>{{ category_chip(task.category) }}</td>
+
+    <td>
+      <span style="display:inline-flex; align-items:center; gap:6px">
+        {{ avatar(task.owner, owner.kind if owner else "human") }}
+        <span style="color:var(--tx-2); font-size:11.5px">{{ task.owner }}</span>
+      </span>
+    </td>
+
+    <td class="nx-mono nx-tab" style="color: {{ task.due_color }}; font-size: 12px">
+      {{ task.due_pretty }}
+    </td>
+
+    <td>{{ status_badge(task.status) }}</td>
+  </tr>
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   FILTER CHIP BAR — used on Task List header.
+   HTMX: each chip GETs the filtered table fragment.
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro filter_chip(label, on=False, hx={}) %}
+  <button class="nx-filter-chip" data-on="{{ '1' if on else '0' }}"
+          {{ attrs(hx) }}>
+    {{ label }}
+    {% if on %}
+      <span class="nx-filter-x">{{ icon("x", 10) }}</span>
+    {% else %}
+      {{ icon("chevd", 11) }}
+    {% endif %}
+  </button>
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   APPROVAL BANNER — Task Detail header strip when requires_approval = true
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro approval_banner(task) %}
+  <div class="nx-approval">
+    <span class="nx-approval-tag">Approval needed</span>
+    <span>This task is flagged as requiring sign-off before dispatch.</span>
+    <div style="flex:1"></div>
+    {{ button("Defer", variant="secondary",
+              hx={"hx_post": "/tasks/" ~ task.id ~ "/defer"}) }}
+    {{ button("Approve & dispatch", variant="primary", icon="bolt",
+              hx={"hx_post": "/tasks/" ~ task.id ~ "/approve"}) }}
+  </div>
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   TOAST — render once in the layout, target with hx-swap-oob.
+   Server emits:  <div id="toast" hx-swap-oob="true">…</div>
+   to inject a toast after an action.
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro toast(text=None) %}
+  <div id="toast">
+    {% if text %}
+      <div class="nx-toast">
+        <span class="nx-toast-dot"></span>
+        <span>{{ text }}</span>
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+
+{# ════════════════════════════════════════════════════════════════════════
+   TOP BAR — logo, nav, search. Render once per page.
+   ════════════════════════════════════════════════════════════════════════ #}
+{% macro top_bar(active="tasks", env="vm-ai · 192.168.10.29") %}
+  {%- set items = [
+    {"id": "tasks",     "label": "Tasks",     "icon": "list"},
+    {"id": "ask",       "label": "Ask",       "icon": "search"},
+    {"id": "approvals", "label": "Approvals", "icon": "check"},
+    {"id": "entities",  "label": "Entities",  "icon": "node"},
+    {"id": "agents",    "label": "Agents",    "icon": "bot"},
+    {"id": "audit",     "label": "Audit",     "icon": "bolt"},
+    {"id": "settings",  "label": "Settings",  "icon": "cmd"},
+  ] %}
+  <header class="nx-topbar">
+    <div class="nx-logo">
+      <svg class="nx-logo-mark" viewBox="0 0 22 22">
+        <line x1="4.5" y1="6" x2="17.5" y2="6"/>
+        <line x1="4.5" y1="6" x2="11" y2="17"/>
+        <line x1="17.5" y1="6" x2="11" y2="17"/>
+        <circle class="b" cx="4.5" cy="6" r="2.4"/>
+        <circle class="b" cx="17.5" cy="6" r="2.4"/>
+        <circle class="n" cx="11" cy="17" r="2.8"/>
+      </svg>
+      <div class="nx-logo-word">Nexus<span class="hq">HQ</span></div>
+      <div class="nx-logo-divider"></div>
+      <div class="nx-logo-env">{{ env }}</div>
+    </div>
+    <nav class="nx-nav">
+      {% for it in items %}
+        <a href="/{{ it.id }}" class="nx-nav-item {% if active == it.id %}active{% endif %}"
+           hx-get="/{{ it.id }}" hx-target="#main" hx-push-url="true">
+          {{ icon(it.icon, 14) }}
+          {{ it.label }}
+          {% if active == it.id %}<span class="nx-nav-dot"></span>{% endif %}
+        </a>
+      {% endfor %}
+    </nav>
+  </header>
+{% endmacro %}

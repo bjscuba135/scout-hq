@@ -7,9 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, field_validator
-from sqlalchemy import case, select, and_
+from sqlalchemy import case, func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import VALID_DOMAINS, VALID_PRIORITIES, VALID_STATUSES
 from app.db.models import Task
 from app.db.session import get_session
 from app.templating import get_templates
@@ -19,19 +20,13 @@ templates = get_templates()
 
 Session = Annotated[AsyncSession, Depends(get_session)]
 
-VALID_CATEGORIES = {
-    "admin", "squirrels", "beavers", "cubs", "scouts",
-    "hut", "events", "volunteers", "finance",
-}
-VALID_PRIORITIES = {"high", "med", "low"}
-VALID_STATUSES = {"open", "in_progress", "waiting", "done", "cancelled"}
-
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class TaskCreate(BaseModel):
     title: str
     body: str | None = None
+    domain: str | None = "scouting"
     category: str = "admin"
     priority: str = "med"
     status: str = "open"
@@ -45,6 +40,7 @@ class TaskCreate(BaseModel):
 class TaskPatch(BaseModel):
     title: str | None = None
     body: str | None = None
+    domain: str | None = None
     category: str | None = None
     priority: str | None = None
     status: str | None = None
@@ -76,11 +72,14 @@ def _is_htmx(request: Request) -> bool:
 async def list_tasks(
     request: Request,
     session: Session,
+    domain: str | None = None,
     category: str | None = None,
     status: str | None = None,
 ):
     stmt = select(Task)
     filters = []
+    if domain and domain != "all":
+        filters.append(Task.domain == domain)
     if category:
         filters.append(Task.category == category)
     if status:
@@ -96,11 +95,24 @@ async def list_tasks(
     result = await session.execute(stmt)
     tasks = result.scalars().all()
 
+    # Domain counts for the filter bar
+    counts_result = await session.execute(
+        select(Task.domain, func.count(Task.id))
+        .where(Task.status != "cancelled")
+        .group_by(Task.domain)
+    )
+    domain_counts = {"all": 0}
+    for d, c in counts_result.all():
+        domain_counts[d or "scouting"] = c
+        domain_counts["all"] += c
+
     ctx = {
         "tasks": tasks,
+        "current_domain": domain or "all",
         "current_category": category,
         "current_status": status,
-        "categories": sorted(VALID_CATEGORIES),
+        "domains": sorted(VALID_DOMAINS),
+        "domain_counts": domain_counts,
         "statuses": list(VALID_STATUSES),
         "today": date.today(),
     }
@@ -117,14 +129,27 @@ async def get_task(request: Request, task_id: uuid.UUID, session: Session):
     task = await session.get(Task, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return templates.TemplateResponse(request, "tasks/detail.html", {"task": task})
+    return templates.TemplateResponse(
+        request, "tasks/detail.html",
+        {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()}
+    )
+
+
+# ── New task drawer ───────────────────────────────────────────────────────────
+
+@router.get("/tasks/new", response_class=HTMLResponse)
+async def new_task_drawer(request: Request):
+    return templates.TemplateResponse(
+        request, "tasks/_drawer.html",
+        {"task": None, "domains": sorted(VALID_DOMAINS)}
+    )
 
 
 # ── Create ────────────────────────────────────────────────────────────────────
 
 @router.post("/tasks", response_class=HTMLResponse, status_code=201)
 async def create_task(request: Request, data: TaskCreate, session: Session):
-    _validate_task_fields(data.category, data.priority, data.status)
+    _validate_task_fields(data.priority, data.status)
     task = Task(**data.model_dump())
     session.add(task)
     await session.commit()
@@ -133,7 +158,8 @@ async def create_task(request: Request, data: TaskCreate, session: Session):
     if _is_htmx(request):
         return templates.TemplateResponse(request, "_partials/task_row.html", {"task": task})
     return templates.TemplateResponse(
-        request, "tasks/detail.html", {"task": task}, status_code=201
+        request, "tasks/detail.html", {"task": task, "domains": sorted(VALID_DOMAINS)},
+        status_code=201
     )
 
 
@@ -148,8 +174,6 @@ async def patch_task(
         raise HTTPException(status_code=404, detail="Task not found")
 
     update = data.model_dump(exclude_unset=True)
-    if "category" in update:
-        _validate_category(update["category"])
     if "priority" in update:
         _validate_priority(update["priority"])
     if "status" in update:
@@ -164,16 +188,16 @@ async def patch_task(
     if _is_htmx(request):
         hx_target = request.headers.get("HX-Target", "")
         if hx_target == "task-main-col":
-            # PATCH from detail page left column — return updated main col only
             return templates.TemplateResponse(
                 request, "_partials/task_main_col.html", {"task": task}
             )
         if hx_target.startswith("task-"):
-            # PATCH from list view row toggle — return updated row
             return templates.TemplateResponse(
                 request, "_partials/task_row.html", {"task": task}
             )
-    return templates.TemplateResponse(request, "tasks/detail.html", {"task": task})
+    return templates.TemplateResponse(
+        request, "tasks/detail.html", {"task": task, "domains": sorted(VALID_DOMAINS)}
+    )
 
 
 # ── Delete (soft) ─────────────────────────────────────────────────────────────
@@ -211,17 +235,31 @@ async def append_note(
     )
 
 
+# ── Dispatch to agent ─────────────────────────────────────────────────────────
+
+@router.post("/tasks/{task_id}/dispatch", response_class=HTMLResponse)
+async def dispatch_task(
+    request: Request, task_id: uuid.UUID, session: Session,
+    agent: str = "CC",
+):
+    task = await session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    task.status = "in_progress"
+    await session.commit()
+    short = str(task_id)[:8]
+    return HTMLResponse(
+        f'<div id="toast" hx-swap-oob="true">'
+        f'<div class="nx-toast"><span class="nx-toast-dot"></span>'
+        f'<span>Dispatched {short}… → {agent}</span></div></div>'
+    )
+
+
 # ── Validation helpers ────────────────────────────────────────────────────────
 
-def _validate_task_fields(category: str, priority: str, status: str):
-    _validate_category(category)
+def _validate_task_fields(priority: str, status: str):
     _validate_priority(priority)
     _validate_status(status)
-
-
-def _validate_category(v: str):
-    if v not in VALID_CATEGORIES:
-        raise HTTPException(400, f"Invalid category '{v}'. Must be one of {sorted(VALID_CATEGORIES)}")
 
 
 def _validate_priority(v: str):

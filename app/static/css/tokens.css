@@ -1,0 +1,200 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Nexus HQ — Design Tokens
+   ─────────────────────────────────────────────────────────────────────────
+   Single source of truth for the visual system. Import as the FIRST stylesheet
+   so every rule downstream can reference these custom properties.
+
+       <link rel="stylesheet" href="tokens.css">
+
+   Token rules:
+   • Surfaces & text use a numeric scale (bg-0..3, tx-1..4) — lower = primary.
+   • Semantic colours (status, priority) are FUNCTIONAL — never re-skin them
+     with brand accents. They communicate state.
+   • Domain pills (Scouting / Personal / Work) are a PARALLEL functional
+     system — distinct from semantic colours.
+   • The brand accent token (--ac) is the only colour the user can re-skin.
+     Switch palettes by setting `data-accent` on the app root.
+   • Light mode is opt-in via `data-mode="light"` on the same root.
+   • Density swap via `data-density="compact"` on the same root.
+   ───────────────────────────────────────────────────────────────────────── */
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   ROOT — defaults are DARK + TEAL accent + MEDIUM density.
+   ════════════════════════════════════════════════════════════════════════ */
+:root {
+
+  /* ── Surfaces (3 layered tones + selected wash) ──────────────────────── */
+  --bg-0: #0b0d12;   /* canvas / page background */
+  --bg-1: #13161e;   /* card surface */
+  --bg-2: #1a1e28;   /* raised: header, input, hover */
+  --bg-3: #232838;   /* selected, nav active wash */
+
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --bd-1: rgba(255,255,255,0.06);   /* hairline — subtle dividers */
+  --bd-2: rgba(255,255,255,0.10);   /* standard — card/input borders */
+  --bd-3: rgba(255,255,255,0.18);   /* strong — focus, checkboxes */
+
+  /* ── Text hierarchy ──────────────────────────────────────────────────── */
+  --tx-1: #e7eaf2;   /* primary — headings, body emphasis */
+  --tx-2: #aab1c1;   /* secondary — body, table cells */
+  --tx-3: #6b7488;   /* tertiary — labels, timestamps */
+  --tx-4: #4a5163;   /* quaternary — disabled, decorative */
+
+  /* ── Brand accent (default: TEAL) ────────────────────────────────────── *
+   *  Single hue + matching desaturated variant. The wash + ring are
+   *  derived via color-mix so swapping accents needs only --ac / --ac-2.   */
+  --ac:    oklch(0.78 0.14 195);
+  --ac-2:  oklch(0.68 0.14 195);
+  --ac-wash: color-mix(in oklab, var(--ac) 14%, transparent);
+  --ac-ring: color-mix(in oklab, var(--ac) 45%, transparent);
+
+  /* ── Semantic — PRIORITY (functional, do not theme) ──────────────────── */
+  --sem-high:    #f25c5c;
+  --sem-med:     #f3a93b;
+  --sem-low:     #6b7488;
+
+  /* ── Semantic — STATUS (functional, do not theme) ────────────────────── */
+  --sem-open:    #5aa3ff;
+  --sem-done:    #4ec38a;
+  --sem-cancel:  #6b7488;
+  --sem-warn:    #f3a93b;
+  --sem-err:     #f25c5c;
+  --sem-await:   #c890ff;
+  --sem-running: var(--sem-open);
+
+  /* ── Domain pills (Scouting / Personal / Work) ───────────────────────── *
+   *  Hue-spread, matched L/C in OKLCH. Distinct from semantic colours.    */
+  --dom-scouting: oklch(0.70 0.16 295);   /* mauve  */
+  --dom-personal: oklch(0.74 0.14 65);    /* amber  */
+  --dom-work:     oklch(0.72 0.14 220);   /* cyan   */
+
+  /* ── Typography ──────────────────────────────────────────────────────── */
+  --ff:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+             system-ui, sans-serif;
+  --ff-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas,
+             monospace;
+
+  --fs-xs:    10.5px;   /* labels, micro */
+  --fs-sm:    11.5px;   /* sub-body */
+  --fs-md:    13px;     /* body / table */
+  --fs-lg:    14.5px;   /* card titles */
+  --fs-xl:    18px;     /* screen titles */
+  --fs-2xl:   24px;     /* page H1 */
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semi:    600;
+  --fw-bold:    700;
+
+  --lh-tight: 1.2;
+  --lh-snug:  1.4;
+  --lh-body:  1.5;
+  --lh-relaxed: 1.65;
+
+  /* ── Spacing scale (4px base) ────────────────────────────────────────── */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 14px;     /* card vertical pad */
+  --sp-5: 16px;
+  --sp-6: 18px;     /* card horizontal pad */
+  --sp-7: 20px;
+  --sp-8: 24px;     /* page gutter */
+  --sp-9: 32px;     /* page outer gutter */
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ── Component dimensions ────────────────────────────────────────────── */
+  --row-h:        44px;   /* table row height (medium density) */
+  --hd-h:         52px;   /* top app bar */
+  --pad-card:     18px;
+  --gap-grid:     14px;
+  --sidebar-w:    280px;
+  --sidebar-r-w:  300px;  /* right context panel */
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-full: 999px;
+
+  /* ── Shadows / elevation ─────────────────────────────────────────────── */
+  --sh-1: 0 1px 2px rgba(0,0,0,0.25);
+  --sh-2: 0 4px 12px rgba(0,0,0,0.35);
+  --sh-3: 0 12px 32px rgba(0,0,0,0.50);
+  --sh-glow-ac: 0 6px 20px -8px var(--ac);
+
+  /* ── Blurs ───────────────────────────────────────────────────────────── */
+  --blur-panel:   24px;   /* drawer / overlay backdrop */
+  --blur-overlay: 14px;   /* modal scrim */
+
+  /* ── Z-index scale ───────────────────────────────────────────────────── */
+  --z-base:    1;
+  --z-sticky:  10;
+  --z-dropdown: 50;
+  --z-drawer:  100;
+  --z-modal:   200;
+  --z-toast:   300;
+
+  /* ── Motion ──────────────────────────────────────────────────────────── */
+  --ease:        cubic-bezier(.2,.7,.3,1);
+  --ease-out:    cubic-bezier(.4,0,.2,1);
+  --dur-fast:    .12s;
+  --dur-base:    .18s;
+  --dur-slow:    .26s;
+
+  /* ── Focus ring ──────────────────────────────────────────────────────── */
+  --focus-ring: 0 0 0 3px var(--ac-ring);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   ACCENT VARIANTS — set `data-accent="violet"` on the app root.
+   ════════════════════════════════════════════════════════════════════════ */
+[data-accent="violet"] {
+  --ac:      oklch(0.74 0.16 295);
+  --ac-2:    oklch(0.66 0.16 295);
+  --ac-wash: color-mix(in oklab, var(--ac) 16%, transparent);
+  --ac-ring: color-mix(in oklab, var(--ac) 45%, transparent);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   LIGHT MODE — set `data-mode="light"` on the app root.
+   ════════════════════════════════════════════════════════════════════════ */
+[data-mode="light"] {
+  --bg-0: #f5f6f9;
+  --bg-1: #ffffff;
+  --bg-2: #f0f2f7;
+  --bg-3: #e6eaf3;
+
+  --bd-1: rgba(10,15,30,0.06);
+  --bd-2: rgba(10,15,30,0.10);
+  --bd-3: rgba(10,15,30,0.16);
+
+  --tx-1: #15192a;
+  --tx-2: #4d556a;
+  --tx-3: #767e93;
+  --tx-4: #99a1b3;
+
+  --ac-wash: color-mix(in oklab, var(--ac) 10%, transparent);
+
+  --sh-1: 0 1px 2px rgba(15,20,40,0.06);
+  --sh-2: 0 4px 12px rgba(15,20,40,0.08);
+  --sh-3: 0 12px 32px rgba(15,20,40,0.14);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   DENSITY — set `data-density="compact"` on the app root.
+   ════════════════════════════════════════════════════════════════════════ */
+[data-density="compact"] {
+  --row-h:    36px;
+  --pad-card: 14px;
+  --sp-card-y: 12px;
+}

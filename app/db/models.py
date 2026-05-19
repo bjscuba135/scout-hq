@@ -34,6 +34,7 @@ class Task(Base):
     )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    domain: Mapped[str | None] = mapped_column(Text, nullable=True)   # scouting|personal|work
     category: Mapped[str] = mapped_column(Text, nullable=False)
     priority: Mapped[str] = mapped_column(Text, nullable=False)  # high|med|low
     status: Mapped[str] = mapped_column(Text, nullable=False, default="open")

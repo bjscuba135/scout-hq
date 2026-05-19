@@ -1,55 +1,76 @@
-{% extends "base.html" %}
+{% extends "_layout.html" %}
+{% import "_macros.html.j2" as nx %}
+{% set active_nav = "entities" %}
 
-{% block title %}Entities — Scout HQ{% endblock %}
+{% block title %}Entities — Nexus HQ{% endblock %}
 
-{% block header_extra %}
-  <a href="/" class="btn btn-secondary btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)">← Tasks</a>
-{% endblock %}
+{% block main %}
+<div class="nx-page">
 
-{% block content %}
-<div class="entities-page">
-
-  <h2 class="page-heading">⭐ Pinned entities</h2>
-  <p class="page-subtext">Pin entities from LightRAG that matter to 1st Beetley. They appear in your dashboard sidebar and are highlighted in task context panels.</p>
-
-  {# ── Search ── #}
-  <div class="entity-search-box">
-    <input type="search"
-           name="q"
-           placeholder="Search entities in Nexus…"
-           autocomplete="off"
-           class="entity-search-input"
-           hx-get="/entities/search"
-           hx-trigger="keyup changed delay:300ms, search"
-           hx-target="#entity-search-results"
-           hx-swap="innerHTML">
+  <div class="nx-page-hd">
+    <h1 class="nx-page-title">Entity explorer</h1>
   </div>
-  <div id="entity-search-results" class="entity-search-results"></div>
 
-  {# ── Pinned list ── #}
-  <h3 class="section-heading">Your pins</h3>
-  {% include "_partials/pinned_entities_list.html" %}
+  <div class="nx-list-layout">
 
-  {# ── Popular ── #}
-  {% if popular %}
-  <h3 class="section-heading">Popular in Nexus</h3>
-  <div class="popular-grid">
-    {% for name in popular %}
-    <div class="popular-item">
-      <a href="/entities/{{ name | urlencode }}" class="popular-name">{{ name }}</a>
-      {% if name in pinned_names %}
-      <span class="pin-star">⭐</span>
-      {% else %}
-      <button class="btn-pin"
-              hx-post="/entities/pin"
-              hx-vals='{"entity_name": {{ name | jsonstr }}}'
-              hx-target="#pinned-entities-list"
-              hx-swap="outerHTML">☆</button>
+    {# ── Main: search + popular ───────────────────────────────────────── #}
+    <div>
+      <div class="nx-card" style="margin-bottom:var(--sp-4)">
+        <div class="nx-card-bd">
+          <input type="search" name="q"
+                 placeholder="Search entities in Nexus…"
+                 autocomplete="off"
+                 class="nx-input"
+                 style="width:100%"
+                 hx-get="/entities/search"
+                 hx-trigger="keyup changed delay:300ms, search"
+                 hx-target="#entity-search-results"
+                 hx-swap="innerHTML">
+          <div id="entity-search-results" style="margin-top:var(--sp-3)"></div>
+        </div>
+      </div>
+
+      {% if popular %}
+      <div class="nx-card">
+        <div class="nx-card-hd"><h3>Popular in Nexus</h3></div>
+        <div class="nx-card-bd" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+          {% for name in popular %}
+          <div style="display:flex;align-items:center;gap:var(--sp-2)">
+            <a href="/entities/{{ name | urlencode }}"
+               class="nx-ent-tag"
+               hx-get="/entities/{{ name | urlencode }}"
+               hx-target="#main" hx-push-url="true">
+              {{ nx.entity_icon("system", 16) }}
+              <span>{{ name }}</span>
+            </a>
+            {% if name not in pinned_names %}
+            <button class="nx-iconbtn"
+                    hx-post="/entities/pin"
+                    hx-vals='{"entity_name": {{ name | jsonstr }}}'
+                    hx-target="#pinned-list" hx-swap="innerHTML"
+                    title="Pin">
+              {{ nx.icon("plus", 11) }}
+            </button>
+            {% else %}
+            <span style="color:var(--ac);font-size:12px">●</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
       {% endif %}
     </div>
-    {% endfor %}
+
+    {# ── Sidebar: pinned ──────────────────────────────────────────────── #}
+    <aside class="nx-sidebar">
+      <div class="nx-card">
+        <div class="nx-card-hd"><h3>Pinned entities</h3></div>
+        <div class="nx-card-bd" id="pinned-list">
+          {% include "_partials/pinned_entities_list.html" %}
+        </div>
+      </div>
+    </aside>
   </div>
-  {% endif %}
 
 </div>
 {% endblock %}

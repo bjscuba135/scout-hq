@@ -1,11 +1,11 @@
 {
-  "name": "Scout HQ — 1st Beetley",
-  "short_name": "Scout HQ",
-  "description": "Task cockpit for 1st Beetley Scout Group GLV",
+  "name": "Nexus HQ",
+  "short_name": "Nexus HQ",
+  "description": "Command your constellation",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#7413dc",
+  "background_color": "#0b0d12",
+  "theme_color": "#13161e",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -29,9 +29,9 @@
       "description": "View all open tasks"
     },
     {
-      "name": "High priority",
-      "url": "/?priority=high&status=open",
-      "description": "High priority open tasks"
+      "name": "Ask Nexus",
+      "url": "/ask",
+      "description": "Query the knowledge graph"
     }
   ]
 }

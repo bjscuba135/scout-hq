@@ -1,0 +1,20 @@
+{% import "_macros.html.j2" as nx %}
+<div class="nx-card-hd"><h3>Agent activity</h3></div>
+<div class="nx-card-bd" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+  {% if runs %}
+    {% for run in runs[:4] %}
+    <div style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-sm)">
+      {{ nx.avatar(run.dispatcher) }}
+      <span class="nx-mono" style="color:var(--tx-3);font-size:var(--fs-xs)">
+        {{ run.started_at.strftime('%H:%M') }}
+      </span>
+      {{ nx.status_badge(run.status) }}
+      <span style="color:var(--tx-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        {{ run.dispatcher }}
+      </span>
+    </div>
+    {% endfor %}
+  {% else %}
+    <span style="color:var(--tx-4);font-size:var(--fs-sm)">No recent runs</span>
+  {% endif %}
+</div>

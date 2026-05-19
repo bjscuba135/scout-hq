@@ -13,3 +13,4 @@ build/
 htmlcov/
 .venv/
 venv/
+design/

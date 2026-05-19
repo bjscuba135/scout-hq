@@ -1,0 +1,109 @@
+{% extends "_layout.html" %}
+{% import "_macros.html.j2" as nx %}
+{% set active_nav = "approvals" %}
+
+{% block title %}Approvals — Nexus HQ{% endblock %}
+
+{% block main %}
+<div class="nx-page">
+
+  {# Header stats #}
+  <div class="nx-page-hd">
+    <h1 class="nx-page-title">Approvals</h1>
+    <div class="nx-stat-row">
+      <div class="nx-stat">
+        <span class="nx-stat-val" style="color:var(--sem-warn)">{{ pending_count }}</span>
+        <span class="nx-stat-label">Needs you</span>
+      </div>
+      <div class="nx-stat">
+        <span class="nx-stat-val">{{ awaiting | length }}</span>
+        <span class="nx-stat-label">Awaiting agent</span>
+      </div>
+      <div class="nx-stat">
+        <span class="nx-stat-val" style="color:var(--sem-done)">{{ recent | length }}</span>
+        <span class="nx-stat-label">Cleared 24h</span>
+      </div>
+    </div>
+  </div>
+
+  {# ── Needs decision ───────────────────────────────────────────────────── #}
+  {% if pending %}
+  <section class="nx-approval-section">
+    <h2 class="nx-section-label">
+      {{ nx.icon("bell", 13) }} Needs your decision
+    </h2>
+    {% for task in pending %}
+    <div class="nx-card nx-approval-card">
+      <div class="nx-approval-card-hd">
+        <span class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-3)">{{ task.id | string | truncate(8, end='…') }}</span>
+        {% if task.domain %}{{ nx.domain_pill(task.domain) }}{% endif %}
+        {{ nx.priority_badge(task.priority) }}
+        <span class="nx-badge s-awaiting">Approval needed</span>
+        <div style="flex:1"></div>
+        {% if task.due_date %}
+        <span class="nx-mono" style="font-size:var(--fs-xs);color:{% if task.due_date < today %}var(--sem-err){% else %}var(--tx-3){% endif %}">
+          Due {{ task.due_date.strftime('%d %b') }}
+        </span>
+        {% endif %}
+      </div>
+      <a class="nx-approval-title" href="/tasks/{{ task.id }}"
+         hx-get="/tasks/{{ task.id }}" hx-target="#main" hx-push-url="true">
+        {{ task.title }}
+      </a>
+      {% if task.body %}
+      <p class="nx-approval-desc">{{ task.body | truncate(180) }}</p>
+      {% endif %}
+      <div class="nx-approval-actions">
+        {{ nx.button("Defer", variant="ghost",
+           hx={"hx_post": "/approvals/" ~ task.id ~ "/defer", "hx_swap": "none"}) }}
+        {{ nx.button("Approve & dispatch", variant="primary", icon="bolt",
+           hx={"hx_post": "/approvals/" ~ task.id ~ "/approve", "hx_swap": "none"}) }}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ── Awaiting agent ───────────────────────────────────────────────────── #}
+  {% if awaiting %}
+  <section class="nx-approval-section">
+    <h2 class="nx-section-label">Awaiting agent</h2>
+    {% for task in awaiting %}
+    <div class="nx-card" style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5)">
+      {{ nx.avatar(task.owner) }}
+      <div style="flex:1">
+        <div style="color:var(--tx-1);font-size:var(--fs-md);font-weight:var(--fw-medium)">{{ task.title }}</div>
+        <div style="color:var(--tx-3);font-size:var(--fs-sm)">Dispatched to {{ task.owner }}</div>
+      </div>
+      {{ nx.status_badge("running") }}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ── Recently approved ────────────────────────────────────────────────── #}
+  {% if recent %}
+  <section class="nx-approval-section">
+    <h2 class="nx-section-label">Recently approved</h2>
+    {% for task in recent %}
+    <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) 0;border-bottom:1px solid var(--bd-1)">
+      <span style="color:var(--sem-done)">{{ nx.icon("check", 13) }}</span>
+      <span class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-4)">{{ task.id | string | truncate(8, end='') }}</span>
+      <span style="color:var(--tx-2);flex:1;font-size:var(--fs-sm)">{{ task.title }}</span>
+      <span style="color:var(--tx-4);font-size:var(--fs-xs);font-family:var(--ff-mono)">
+        {{ task.updated_at.strftime('%H:%M') }}
+      </span>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if not pending and not awaiting and not recent %}
+  <div style="text-align:center;padding:var(--sp-16);color:var(--tx-4)">
+    <div style="font-size:32px;margin-bottom:var(--sp-4)">✓</div>
+    <div>Nothing needs your attention right now.</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

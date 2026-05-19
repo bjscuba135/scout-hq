@@ -1,0 +1,56 @@
+{% extends "_layout.html" %}
+{% import "_macros.html.j2" as nx %}
+{% set active_nav = "ask" %}
+
+{% block title %}Ask Nexus — Nexus HQ{% endblock %}
+
+{% block main %}
+<div class="nx-page nx-ask-page">
+
+  {# ── Query area ───────────────────────────────────────────────────────── #}
+  <div class="nx-ask-hero">
+    <div class="nx-dotgrid" style="position:absolute;inset:0;z-index:0"></div>
+    <div style="position:relative;z-index:1;width:100%;max-width:720px">
+      <h1 style="font-size:var(--fs-xl);font-weight:var(--fw-semi);color:var(--tx-1);margin-bottom:var(--sp-5)">
+        Ask the knowledge graph
+      </h1>
+      <form hx-post="/ask" hx-target="#ask-result" hx-swap="innerHTML" hx-indicator="#ask-spinner">
+        <textarea class="nx-input nx-ask-textarea" name="query" required
+                  placeholder="Ask anything about your domains…"
+                  rows="3"
+                  onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){this.form.requestSubmit()}">{% if result %}{{ result.query }}{% endif %}</textarea>
+        <div style="display:flex;align-items:center;gap:var(--sp-3);margin-top:var(--sp-3)">
+          <select class="nx-input" name="mode" style="width:140px">
+            {% for m in ["hybrid","local","global","naive"] %}
+            <option value="{{ m }}" {% if result and result.mode == m %}selected{% endif %}>{{ m | title }}</option>
+            {% endfor %}
+          </select>
+          {{ nx.button("Ask Nexus", variant="primary", icon="search") }}
+          <span id="ask-spinner" class="htmx-indicator nx-mono"
+                style="font-size:var(--fs-xs);color:var(--tx-3)">Querying…</span>
+          <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--tx-4)">⌘↵ to submit</span>
+        </div>
+      </form>
+
+      {# Suggested prompts #}
+      {% if not result %}
+      <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-top:var(--sp-5)">
+        {% for prompt in suggested_prompts %}
+        <button class="nx-filter-chip" data-on="0"
+                onclick="document.querySelector('[name=query]').value=this.dataset.prompt;this.closest('form')&&this.closest('form').requestSubmit()"
+                data-prompt="{{ prompt }}">
+          {{ prompt }}
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── Result area ──────────────────────────────────────────────────────── #}
+  <div id="ask-result">
+    {% if result %}{% include "ask/_result.html" %}{% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"
+      data-accent="teal"
+      data-mode="dark"
+      data-density="medium">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Nexus HQ{% endblock %}</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#13161e">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', path='css/layout.css') }}">
+  <script>
+    /* Apply saved tweaks before first paint — avoids FOUC */
+    (function() {
+      try {
+        var p = JSON.parse(localStorage.nexusPrefs || '{}');
+        var r = document.documentElement;
+        r.dataset.accent  = p.accent  || 'teal';
+        r.dataset.mode    = p.mode    || 'dark';
+        r.dataset.density = p.density || 'medium';
+      } catch(e) {}
+    })();
+  </script>
+  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', path='app.js') }}" defer></script>
+</head>
+<body class="nx-root" hx-boost="true">
+{% import "_macros.html.j2" as nx %}
+
+{% set _active = active_nav | default('tasks') %}
+
+{# ── Top bar ────────────────────────────────────────────────────────────── #}
+<header class="nx-topbar">
+  <div class="nx-logo">
+    <svg class="nx-logo-mark" viewBox="0 0 22 22" fill="none"
+         stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4.5" y1="6" x2="17.5" y2="6" stroke-width="1.4"/>
+      <line x1="4.5" y1="6" x2="11" y2="17" stroke-width="1.4"/>
+      <line x1="17.5" y1="6" x2="11" y2="17" stroke-width="1.4"/>
+      <circle cx="4.5" cy="6" r="2.4" stroke-width="1.4"/>
+      <circle cx="17.5" cy="6" r="2.4" stroke-width="1.4"/>
+      <circle cx="11" cy="17" r="2.8" fill="var(--ac)" stroke="var(--ac)"/>
+    </svg>
+    <div class="nx-logo-word">Nexus<span class="hq">HQ</span></div>
+    <div class="nx-logo-divider"></div>
+    <div class="nx-logo-env">vm-ai · 192.168.10.29</div>
+  </div>
+  <nav class="nx-nav">
+    {% set _nav = [
+      ("tasks",     "Tasks",     "list"),
+      ("ask",       "Ask",       "search"),
+      ("approvals", "Approvals", "check"),
+      ("entities",  "Entities",  "node"),
+      ("agents",    "Agents",    "bot"),
+      ("audit",     "Audit",     "bolt"),
+      ("settings",  "Settings",  "cmd"),
+    ] %}
+    {% for id, label, ico in _nav %}
+      <a href="/{{ id }}" class="nx-nav-item{% if _active == id %} active{% endif %}"
+         hx-get="/{{ id }}" hx-target="#main" hx-push-url="true">
+        {{ nx.icon(ico, 14) }}
+        {{ label }}
+        {% if _active == id %}<span class="nx-nav-dot"></span>{% endif %}
+      </a>
+    {% endfor %}
+  </nav>
+</header>
+
+{# ── Main content ────────────────────────────────────────────────────────── #}
+<main id="main" class="nx-screen">
+  {% block main %}{% endblock %}
+</main>
+
+{# ── Toast slot (OOB target) ─────────────────────────────────────────────── #}
+{{ nx.toast() }}
+
+{# ── Drawer slot ─────────────────────────────────────────────────────────── #}
+<div id="drawer" class="nx-drawer-host"></div>
+
+</body>
+</html>

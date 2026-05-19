@@ -1,0 +1,105 @@
+{% extends "_layout.html" %}
+{% import "_macros.html.j2" as nx %}
+{% set active_nav = "audit" %}
+
+{% block title %}Audit Log — Nexus HQ{% endblock %}
+
+{% block main %}
+<div class="nx-page">
+
+  <div class="nx-page-hd">
+    <h1 class="nx-page-title">Audit log</h1>
+    <div class="nx-stat-row">
+      <div class="nx-stat">
+        <span class="nx-stat-val nx-mono">{{ runs | length }}</span>
+        <span class="nx-stat-label">Shown</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="nx-audit-layout">
+
+    {# ── Timeline ─────────────────────────────────────────────────────── #}
+    <div class="nx-audit-feed">
+      {% for group in groups %}
+      <div class="nx-audit-day-hd">{{ group.day }}</div>
+
+      {% for run in group.runs %}
+      <div class="nx-audit-row">
+        <span class="nx-mono nx-audit-time">{{ run.started_at.strftime('%H:%M:%S') }}</span>
+
+        {{ nx.avatar(run.dispatcher, "pipe") }}
+
+        <span class="nx-badge s-{{ run.status }}" style="font-family:var(--ff-mono);font-size:var(--fs-xs)">
+          task.{{ run.status }}
+        </span>
+
+        <div class="nx-audit-desc">
+          <span style="color:var(--tx-2);font-size:var(--fs-sm)">
+            {{ run.dispatcher }}
+            {% if run.log %} — {{ run.log | truncate(80) }}{% endif %}
+          </span>
+          {% if run.request_payload %}
+          <pre class="nx-audit-payload">{{ run.request_payload | tojson(indent=2) | truncate(200) }}</pre>
+          {% endif %}
+        </div>
+
+        <div class="nx-audit-meta">
+          {% if run.cost_tokens %}
+          <span class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-4)">{{ run.cost_tokens }}t</span>
+          {% endif %}
+          {% if run.finished_at %}
+          <span class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-4)">
+            {{ ((run.finished_at - run.started_at).total_seconds() | int) }}s
+          </span>
+          {% endif %}
+          {{ nx.status_badge(run.status) }}
+        </div>
+      </div>
+      {% endfor %}
+
+      {% else %}
+      <div style="text-align:center;padding:var(--sp-12);color:var(--tx-4)">
+        No audit entries yet
+      </div>
+      {% endfor %}
+
+      {% if next_cursor %}
+      <div style="text-align:center;padding:var(--sp-6)">
+        {{ nx.button("Load more", variant="ghost",
+           hx={"hx_get": "/audit?before=" ~ next_cursor,
+               "hx_target": ".nx-audit-feed",
+               "hx_swap": "beforeend"}) }}
+      </div>
+      {% endif %}
+    </div>
+
+    {# ── Filter rail ──────────────────────────────────────────────────── #}
+    <aside class="nx-audit-rail">
+      <div class="nx-card">
+        <div class="nx-card-hd"><h3>Filters</h3></div>
+        <div class="nx-card-bd" style="display:flex;flex-direction:column;gap:var(--sp-4)">
+          <div>
+            <div class="nx-card-eyebrow" style="margin-bottom:var(--sp-2)">Agent</div>
+            {% set dispatchers = runs | map(attribute='dispatcher') | unique | list %}
+            {% for d in dispatchers %}
+            <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-sm);color:var(--tx-2);margin-bottom:var(--sp-1)">
+              <input type="checkbox" checked> {{ d }}
+            </label>
+            {% endfor %}
+          </div>
+          <div>
+            <div class="nx-card-eyebrow" style="margin-bottom:var(--sp-2)">Status</div>
+            {% for s in ["queued","running","succeeded","failed","cancelled"] %}
+            <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-sm);color:var(--tx-2);margin-bottom:var(--sp-1)">
+              <input type="checkbox" checked> {{ s }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+{% endblock %}

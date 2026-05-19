@@ -1,0 +1,101 @@
+{% import "_macros.html.j2" as nx %}
+<div class="nx-drawer is-open">
+  <div class="nx-drawer-hd">
+    <h2 style="font-size:var(--fs-lg);font-weight:var(--fw-semi);color:var(--tx-1)">
+      New task
+    </h2>
+    <button class="nx-iconbtn" hx-get="" hx-target="#drawer" hx-swap="innerHTML"
+            onclick="document.getElementById('drawer').innerHTML=''" title="Close">
+      {{ nx.icon("x", 14) }}
+    </button>
+  </div>
+
+  <form class="nx-drawer-body"
+        hx-post="/tasks"
+        hx-target="#task-rows"
+        hx-swap="afterbegin"
+        hx-on--after-request="if(event.detail.successful){document.getElementById('drawer').innerHTML=''}">
+
+    {# Title #}
+    <div class="nx-field">
+      <label class="nx-label">Title <span style="color:var(--sem-err)">*</span></label>
+      <input class="nx-input" name="title" placeholder="What needs doing?" required autofocus>
+    </div>
+
+    {# Domain #}
+    <div class="nx-field">
+      <label class="nx-label">Domain <span style="color:var(--sem-err)">*</span></label>
+      <div class="nx-seg-ctrl">
+        {% for d in ["scouting","personal","work"] %}
+        <label class="nx-seg-opt">
+          <input type="radio" name="domain" value="{{ d }}"
+                 {% if loop.first %}checked{% endif %}>
+          <span>{{ d | title }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Category + Priority row #}
+    <div class="nx-field-row">
+      <div class="nx-field">
+        <label class="nx-label">Category</label>
+        <input class="nx-input" name="category" value="admin" placeholder="e.g. Homelab">
+      </div>
+      <div class="nx-field">
+        <label class="nx-label">Priority</label>
+        <div class="nx-seg-ctrl">
+          {% for p, color in [("high","var(--sem-high)"),("med","var(--sem-med)"),("low","var(--sem-low)")] %}
+          <label class="nx-seg-opt">
+            <input type="radio" name="priority" value="{{ p }}"
+                   {% if p == "med" %}checked{% endif %}>
+            <span>
+              <span style="color:{{ color }};margin-right:4px">●</span>{{ p | title }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Owner + Due row #}
+    <div class="nx-field-row">
+      <div class="nx-field">
+        <label class="nx-label">Owner</label>
+        <input class="nx-input" name="owner" value="ben" placeholder="ben">
+      </div>
+      <div class="nx-field">
+        <label class="nx-label">Due date</label>
+        <input class="nx-input" type="date" name="due_date">
+      </div>
+    </div>
+
+    {# Body #}
+    <div class="nx-field">
+      <label class="nx-label">Description <span style="color:var(--tx-4);font-size:var(--fs-xs)">markdown</span></label>
+      <textarea class="nx-input" name="body" rows="5"
+                style="font-family:var(--ff-mono);font-size:var(--fs-sm)"
+                placeholder="Optional detail…"></textarea>
+    </div>
+
+    {# Requires approval toggle #}
+    <div class="nx-field" style="flex-direction:row;align-items:center;gap:var(--sp-3)">
+      <input type="checkbox" name="requires_approval" value="true"
+             id="req-approval" class="nx-check" data-on="0"
+             onchange="this.dataset.on=this.checked?'1':'0'">
+      <label for="req-approval" style="color:var(--tx-2);font-size:var(--fs-md);cursor:pointer">
+        Requires approval before dispatch
+      </label>
+    </div>
+
+    {# Footer #}
+    <div class="nx-drawer-footer">
+      <button type="button" class="nx-btn ghost"
+              onclick="document.getElementById('drawer').innerHTML=''">
+        Cancel
+      </button>
+      {{ nx.button("Create task", variant="primary", type="submit", kbd="⌘↵") }}
+    </div>
+
+  </form>
+</div>

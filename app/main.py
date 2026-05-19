@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.db import models  # noqa: F401 — registers mappers before alembic runs
-from app.routes import api, context, entities, tasks, webhooks
+from app.routes import agents, api, approvals, ask, audit, context, entities, settings, tasks, webhooks
 
 APP_DIR = Path(__file__).parent
 
@@ -25,9 +25,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Scout HQ",
-    description="Personal cockpit for 1st Beetley Scout Group GLV",
-    version="0.2.0",
+    title="Nexus HQ",
+    description="Personal cockpit for The Nexus Constellation",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
@@ -44,7 +44,7 @@ async def basic_auth_middleware(request: Request, call_next):
         return JSONResponse(
             status_code=401,
             content={"detail": "Authentication required"},
-            headers={"WWW-Authenticate": 'Basic realm="Scout HQ"'},
+            headers={"WWW-Authenticate": 'Basic realm="Nexus HQ"'},
         )
 
     try:
@@ -54,7 +54,7 @@ async def basic_auth_middleware(request: Request, call_next):
         return JSONResponse(
             status_code=401,
             content={"detail": "Invalid credentials"},
-            headers={"WWW-Authenticate": 'Basic realm="Scout HQ"'},
+            headers={"WWW-Authenticate": 'Basic realm="Nexus HQ"'},
         )
 
     ok = secrets.compare_digest(username, settings.scouthq_username) and secrets.compare_digest(
@@ -64,7 +64,7 @@ async def basic_auth_middleware(request: Request, call_next):
         return JSONResponse(
             status_code=401,
             content={"detail": "Invalid credentials"},
-            headers={"WWW-Authenticate": 'Basic realm="Scout HQ"'},
+            headers={"WWW-Authenticate": 'Basic realm="Nexus HQ"'},
         )
 
     return await call_next(request)
@@ -77,6 +77,11 @@ app.include_router(webhooks.router)
 app.include_router(context.router)
 app.include_router(entities.router)
 app.include_router(api.router)
+app.include_router(ask.router)
+app.include_router(approvals.router)
+app.include_router(agents.router)
+app.include_router(audit.router)
+app.include_router(settings.router)
 
 
 @app.get("/healthz", tags=["ops"])

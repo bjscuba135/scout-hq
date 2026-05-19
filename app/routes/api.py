@@ -15,19 +15,13 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.constants import VALID_PRIORITIES, VALID_STATUSES
 from app.db.models import Task
 from app.db.session import get_session
 
 router = APIRouter(prefix="/api", tags=["api"])
 
 Session = Depends(get_session)
-
-VALID_STATUSES   = {"open", "in_progress", "waiting", "done", "cancelled"}
-VALID_PRIORITIES = {"high", "med", "low"}
-VALID_CATEGORIES = {
-    "admin", "squirrels", "beavers", "cubs", "scouts",
-    "hut", "events", "volunteers", "finance",
-}
 
 
 # ── Serialiser ────────────────────────────────────────────────────────────────
@@ -37,6 +31,7 @@ def _task_to_dict(task: Task) -> dict[str, Any]:
         "id":               str(task.id),
         "title":            task.title,
         "body":             task.body,
+        "domain":           task.domain,
         "category":         task.category,
         "priority":         task.priority,
         "status":           task.status,
@@ -56,6 +51,7 @@ class TaskPatchBody(BaseModel):
     """All fields optional — send only what you want to change."""
     title:    str | None = None
     body:     str | None = None
+    domain:   str | None = None
     category: str | None = None
     priority: str | None = None
     status:   str | None = None
@@ -81,13 +77,6 @@ class TaskPatchBody(BaseModel):
             raise ValueError(f"priority must be one of {sorted(VALID_PRIORITIES)}")
         return v
 
-    @field_validator("category")
-    @classmethod
-    def validate_category(cls, v):
-        if v and v not in VALID_CATEGORIES:
-            raise ValueError(f"category must be one of {sorted(VALID_CATEGORIES)}")
-        return v
-
 
 class NoteBody(BaseModel):
     note: str
@@ -97,21 +86,23 @@ class NoteBody(BaseModel):
 
 @router.get("/tasks")
 async def api_list_tasks(
-    session:  AsyncSession = Session,
-    status:   str | None = None,
-    category: str | None = None,
-    priority: str | None = None,
-    owner:    str | None = None,
-    source:   str | None = None,
+    session:    AsyncSession = Session,
+    status:     str | None = None,
+    domain:     str | None = None,
+    category:   str | None = None,
+    priority:   str | None = None,
+    owner:      str | None = None,
+    source:     str | None = None,
     source_ref: str | None = None,
-    q:        str | None = None,
-    limit:    int = 200,
+    q:          str | None = None,
+    limit:      int = 200,
 ) -> list[dict[str, Any]]:
     """List / search tasks.
 
     Query params (all optional, combinable):
       status    open | in_progress | waiting | done | cancelled
-      category  admin | squirrels | beavers | cubs | scouts | hut | events | volunteers | finance
+      domain    scouting | personal | work
+      category  free text
       priority  high | med | low
       owner     ben | claude_code | n8n | ...
       source    manual | email-triage | tasks_md | ...
@@ -123,6 +114,8 @@ async def api_list_tasks(
     filters = []
     if status:
         filters.append(Task.status == status)
+    if domain and domain != "all":
+        filters.append(Task.domain == domain)
     if category:
         filters.append(Task.category == category)
     if priority:
@@ -188,6 +181,21 @@ async def api_patch_task(
     return _task_to_dict(task)
 
 
+# ── DELETE /api/tasks/{id} ─────────────────────────────────────────────────────
+
+@router.delete("/tasks/{task_id}")
+async def api_delete_task(
+    task_id: uuid.UUID, session: AsyncSession = Session
+) -> dict[str, Any]:
+    """Hard-delete a task. Prefer PATCH status=cancelled for soft delete."""
+    task = await session.get(Task, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    await session.delete(task)
+    await session.commit()
+    return {"deleted": str(task_id)}
+
+
 # ── POST /api/tasks/{id}/notes ─────────────────────────────────────────────────
 
 @router.post("/tasks/{task_id}/notes")
@@ -196,11 +204,7 @@ async def api_append_note(
     body:    NoteBody,
     session: AsyncSession = Session,
 ) -> dict[str, Any]:
-    """Append a timestamped note to a task's body. Returns the updated task.
-
-    The note is appended as:
-        [DD Mon YYYY HH:MM UTC] your note text
-    """
+    """Append a timestamped note to a task's body. Returns the updated task."""
     task = await session.get(Task, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")

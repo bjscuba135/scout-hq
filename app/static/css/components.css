@@ -1,0 +1,502 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Nexus HQ — Component CSS
+   ─────────────────────────────────────────────────────────────────────────
+   Drop-in stylesheet. Requires tokens.css to be loaded FIRST:
+
+       <link rel="stylesheet" href="/static/css/tokens.css">
+       <link rel="stylesheet" href="/static/css/components.css">
+
+   All component rules reference tokens via var(--…). Re-skin by editing
+   tokens.css; never edit hex values here.
+
+   Selector conventions:
+     • .nx-*          component root
+     • .p-* .s-*      badge variants (priority, status)
+     • [data-*]       runtime state — e.g. [data-on="1"], [data-domain="…"]
+     • [data-accent]  on the html root, swaps brand accent
+     • [data-mode]    on the html root, swaps light/dark
+     • [data-density] on the html root, swaps row heights
+
+   ───────────────────────────────────────────────────────────────────────── */
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   ROOT
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-root {
+  background: var(--bg-0);
+  color: var(--tx-1);
+  font-family: var(--ff);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11";
+}
+.nx-root *,
+.nx-root *::before,
+.nx-root *::after { box-sizing: border-box; }
+
+.nx-mono { font-family: var(--ff-mono); font-feature-settings: "tnum"; }
+.nx-tab  { font-variant-numeric: tabular-nums; }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   DOT GRID — subtle constellation background for empty states / panels
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-dotgrid {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--tx-1) 8%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 22px 22px;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   LOGO — 3-node triangle + wordmark
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-logo            { display:flex; align-items:center; gap: var(--sp-3); }
+.nx-logo-mark       { width: 22px; height: 22px; flex: 0 0 auto; }
+.nx-logo-mark line  { stroke: color-mix(in oklab, var(--ac) 75%, var(--tx-1)); stroke-width: 1.25; }
+.nx-logo-mark circle.n { fill: var(--ac); }
+.nx-logo-mark circle.b { fill: var(--bg-0); stroke: var(--ac); stroke-width: 1.6; }
+.nx-logo-word       { font-weight: var(--fw-semi); font-size: 15px; letter-spacing: -0.01em; color: var(--tx-1); white-space: nowrap; }
+.nx-logo-word .hq   { color: var(--ac); font-weight: var(--fw-bold); margin-left: var(--sp-1); }
+.nx-logo-divider    { width: 1px; height: 18px; background: var(--bd-2); margin: 0 var(--sp-1); }
+.nx-logo-env        { font-family: var(--ff-mono); font-size: 10.5px; color: var(--tx-3); letter-spacing: 0.03em; }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   BADGES — priority, status, domain pill, category chip
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 20px; padding: 0 var(--sp-2);
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  letter-spacing: 0.02em; text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.nx-badge .nx-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+
+/* ── Priority variants ────────────────────────────────────────────────── */
+.nx-badge.p-high { color:#ffb1b1; background: color-mix(in oklab, var(--sem-high) 20%, transparent); border-color: color-mix(in oklab, var(--sem-high) 35%, transparent); }
+.nx-badge.p-med  { color:#fdd590; background: color-mix(in oklab, var(--sem-med)  18%, transparent); border-color: color-mix(in oklab, var(--sem-med)  32%, transparent); }
+.nx-badge.p-low  { color: var(--tx-2); background: color-mix(in oklab, var(--tx-3) 14%, transparent); border-color: var(--bd-2); }
+
+/* ── Status variants ──────────────────────────────────────────────────── */
+.nx-badge.s-open      { color:#b5d4ff; background: color-mix(in oklab, var(--sem-open)  20%, transparent); border-color: color-mix(in oklab, var(--sem-open)  35%, transparent); }
+.nx-badge.s-running   { color:#c5e6ff; background: color-mix(in oklab, var(--sem-open)  22%, transparent); border-color: color-mix(in oklab, var(--sem-open)  40%, transparent); }
+.nx-badge.s-done      { color:#a4e6c4; background: color-mix(in oklab, var(--sem-done)  18%, transparent); border-color: color-mix(in oklab, var(--sem-done)  32%, transparent); }
+.nx-badge.s-success   { color:#a4e6c4; background: color-mix(in oklab, var(--sem-done)  18%, transparent); border-color: color-mix(in oklab, var(--sem-done)  32%, transparent); }
+.nx-badge.s-awaiting  { color:#e6cfff; background: color-mix(in oklab, var(--sem-await) 20%, transparent); border-color: color-mix(in oklab, var(--sem-await) 36%, transparent); }
+.nx-badge.s-error     { color:#ffb1b1; background: color-mix(in oklab, var(--sem-err)   22%, transparent); border-color: color-mix(in oklab, var(--sem-err)   38%, transparent); }
+.nx-badge.s-failed    { color:#ffb1b1; background: color-mix(in oklab, var(--sem-err)   22%, transparent); border-color: color-mix(in oklab, var(--sem-err)   38%, transparent); }
+.nx-badge.s-idle      { color: var(--tx-2); background: transparent; border-color: var(--bd-2); }
+.nx-badge.s-cancelled { color: var(--tx-3); background: transparent; border-color: var(--bd-2); text-decoration: line-through; }
+
+/* ── Category chip — neutral grey ─────────────────────────────────────── */
+.nx-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  color: var(--tx-2);
+  background: var(--bg-2);
+  border: 1px solid var(--bd-1);
+  white-space: nowrap;
+}
+.nx-chip .nx-chip-bar { width: 2px; height: 11px; border-radius: 1px; background: var(--tx-3); flex: 0 0 auto; }
+
+/* ── Domain pill — Scouting / Personal / Work ─────────────────────────── */
+.nx-dom {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px 0 7px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+.nx-dom[data-domain="scouting"] { color: var(--dom-scouting); background: color-mix(in oklab, var(--dom-scouting) 12%, transparent); }
+.nx-dom[data-domain="personal"] { color: var(--dom-personal); background: color-mix(in oklab, var(--dom-personal) 12%, transparent); }
+.nx-dom[data-domain="work"]     { color: var(--dom-work);     background: color-mix(in oklab, var(--dom-work)     14%, transparent); }
+.nx-dom .nx-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* ── Domain stripe — 3px accent on left edge of a task row ────────────── */
+.nx-domstripe {
+  display: inline-block; width: 3px; height: 18px;
+  border-radius: 2px; vertical-align: middle;
+  margin-right: var(--sp-3);
+}
+.nx-domstripe[data-domain="scouting"] { background: var(--dom-scouting); }
+.nx-domstripe[data-domain="personal"] { background: var(--dom-personal); }
+.nx-domstripe[data-domain="work"]     { background: var(--dom-work); }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 7px;
+  height: 30px; padding: 0 13px;
+  border-radius: var(--r-sm);
+  font: var(--fw-medium) 12.5px/1 var(--ff);
+  letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--dur-fast),
+              border-color var(--dur-fast),
+              color var(--dur-fast),
+              transform .04s,
+              box-shadow var(--dur-fast);
+  user-select: none;
+  white-space: nowrap;
+}
+.nx-btn:active           { transform: translateY(0.5px); }
+.nx-btn:focus-visible    { outline: none; box-shadow: var(--focus-ring); }
+.nx-btn[disabled]        { opacity: 0.5; cursor: not-allowed; }
+
+/* Primary — solid accent. Text colour is dark so it reads on every accent hue. */
+.nx-btn.primary {
+  background: var(--ac);
+  color: #06121a;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--ac) 35%, transparent) inset,
+    var(--sh-glow-ac);
+}
+.nx-btn.primary:hover { background: var(--ac-2); }
+[data-accent="violet"] .nx-btn.primary { color: #120a22; }
+
+/* Secondary — surface + border */
+.nx-btn.secondary {
+  background: var(--bg-2);
+  color: var(--tx-1);
+  border-color: var(--bd-2);
+}
+.nx-btn.secondary:hover { background: var(--bg-3); border-color: var(--bd-3); }
+
+/* Ghost — text-only until hover */
+.nx-btn.ghost           { background: transparent; color: var(--tx-2); }
+.nx-btn.ghost:hover     { background: var(--bg-2); color: var(--tx-1); }
+
+/* Danger — destructive */
+.nx-btn.danger {
+  background: color-mix(in oklab, var(--sem-err) 18%, transparent);
+  color: #ffb1b1;
+  border-color: color-mix(in oklab, var(--sem-err) 36%, transparent);
+}
+.nx-btn.danger:hover { background: color-mix(in oklab, var(--sem-err) 26%, transparent); }
+
+/* Keyboard hint baked into a button (⌘K, ⌘↵, N etc.) */
+.nx-btn .nx-kbd {
+  font-family: var(--ff-mono); font-size: 10.5px;
+  padding: 1px 5px; border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  color: var(--tx-2);
+}
+[data-mode="light"] .nx-btn .nx-kbd { background: rgba(0,0,0,0.05); }
+
+/* Icon-only button — square, same height bucket */
+.nx-iconbtn {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--bd-1);
+  background: var(--bg-2);
+  color: var(--tx-2);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+.nx-iconbtn:hover { background: var(--bg-3); color: var(--tx-1); }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   INPUTS
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-input {
+  width: 100%;
+  height: 32px; padding: 0 12px;
+  border-radius: var(--r-sm);
+  background: var(--bg-1);
+  color: var(--tx-1);
+  font: var(--fs-md)/1 var(--ff);
+  border: 1px solid var(--bd-2);
+  transition: border-color var(--dur-fast), background var(--dur-fast);
+}
+.nx-input::placeholder { color: var(--tx-3); }
+.nx-input:hover        { border-color: var(--bd-3); }
+.nx-input:focus {
+  outline: none;
+  border-color: var(--ac);
+  box-shadow: var(--focus-ring);
+  background: var(--bg-2);
+}
+.nx-input:disabled     { opacity: 0.5; cursor: not-allowed; }
+
+/* Checkbox — used for "task done" and audit-log filters */
+.nx-check {
+  width: 16px; height: 16px; flex: 0 0 auto;
+  border-radius: 4px;
+  border: 1.4px solid var(--bd-3);
+  background: var(--bg-1);
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .1s, border-color .1s, box-shadow .1s;
+}
+.nx-check:hover                  { border-color: var(--ac); }
+.nx-check:focus-visible          { outline: none; box-shadow: var(--focus-ring); }
+.nx-check[data-on="1"]           { background: var(--ac); border-color: var(--ac); }
+.nx-check[data-on="1"] svg       { display: block; }
+.nx-check svg                    { display: none; width: 10px; height: 10px; color: #06121a; }
+[data-accent="violet"] .nx-check svg { color: #120a22; }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   AVATARS
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-avatar {
+  width: 24px; height: 24px; flex: 0 0 auto;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font: var(--fw-semi) 10px/1 var(--ff);
+  letter-spacing: 0.02em;
+  background: var(--bg-3); color: var(--tx-1);
+  border: 1px solid var(--bd-2);
+}
+.nx-avatar.lg { width: 32px; height: 32px; font-size: 11.5px; }
+
+.nx-avatar[data-kind="code"]  { background: color-mix(in oklab, var(--ac) 24%, var(--bg-2));         color: var(--ac);    border-color: color-mix(in oklab, var(--ac) 38%, transparent); }
+.nx-avatar[data-kind="comms"] { background: color-mix(in oklab, var(--sem-await) 22%, var(--bg-2)); color: #e6cfff;       border-color: color-mix(in oklab, var(--sem-await) 38%, transparent); }
+.nx-avatar[data-kind="pipe"]  { background: color-mix(in oklab, var(--sem-warn)  20%, var(--bg-2)); color: #fdd590;       border-color: color-mix(in oklab, var(--sem-warn)  34%, transparent); }
+.nx-avatar[data-kind="human"] { background: color-mix(in oklab, var(--dom-personal) 22%, var(--bg-2)); color: #f9e0a1; }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   CARDS
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-card {
+  background: var(--bg-1);
+  border: 1px solid var(--bd-1);
+  border-radius: var(--r-lg);
+}
+.nx-card-hd {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-4) var(--pad-card);
+  border-bottom: 1px solid var(--bd-1);
+}
+.nx-card-hd h3 {
+  font: var(--fw-semi) 12.5px/1 var(--ff);
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.nx-card-bd        { padding: var(--pad-card); }
+.nx-card-eyebrow   {
+  font: var(--fw-semi) 10.5px/1 var(--ff);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tx-3);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   TABLES
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-table { width: 100%; border-collapse: collapse; }
+
+.nx-table th {
+  font: var(--fw-medium) 10.5px/1 var(--ff);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--bd-1);
+  background: var(--bg-1);
+}
+
+.nx-table td {
+  padding: 0 var(--sp-3);
+  height: var(--row-h);
+  border-bottom: 1px solid var(--bd-1);
+  color: var(--tx-1);
+  font-size: var(--fs-md);
+  vertical-align: middle;
+}
+
+.nx-table tbody tr           { cursor: pointer; transition: background .08s; }
+.nx-table tbody tr:hover     { background: color-mix(in oklab, var(--bg-2) 70%, transparent); }
+.nx-table tbody tr.selected  { background: color-mix(in oklab, var(--ac-wash) 80%, transparent); }
+.nx-table tbody tr.done td:nth-child(3) { color: var(--tx-3); text-decoration: line-through; }
+.nx-table tbody tr:last-child td { border-bottom: 0; }
+.nx-table .truncate {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   ENTITY ICON + TAG
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-ent-icon {
+  width: 22px; height: 22px; flex: 0 0 auto;
+  border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg-2); color: var(--tx-2);
+  border: 1px solid var(--bd-1);
+}
+.nx-ent-icon[data-type="person"]  { color: var(--dom-personal); background: color-mix(in oklab, var(--dom-personal) 12%, var(--bg-2)); }
+.nx-ent-icon[data-type="org"]     { color: var(--dom-scouting); background: color-mix(in oklab, var(--dom-scouting) 12%, var(--bg-2)); }
+.nx-ent-icon[data-type="system"]  { color: var(--ac);           background: color-mix(in oklab, var(--ac)           14%, var(--bg-2)); }
+.nx-ent-icon[data-type="place"]   { color: var(--dom-work);     background: color-mix(in oklab, var(--dom-work)     14%, var(--bg-2)); }
+.nx-ent-icon[data-type="doc"]     { color: var(--sem-med);      background: color-mix(in oklab, var(--sem-med)      14%, var(--bg-2)); }
+
+.nx-ent-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 24px; padding: 0 9px 0 5px;
+  border-radius: var(--r-full);
+  background: var(--bg-2);
+  border: 1px solid var(--bd-2);
+  font: var(--fw-medium) 11.5px/1 var(--ff);
+  color: var(--tx-1);
+  cursor: pointer;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.nx-ent-tag:hover { background: var(--bg-3); border-color: var(--bd-3); }
+.nx-ent-tag .nx-ent-icon { width: 16px; height: 16px; border-radius: 4px; }
+.nx-ent-tag .nx-ent-icon svg { width: 10px; height: 10px; }
+.nx-ent-tag .nx-ent-type {
+  color: var(--tx-3); font-size: 10.5px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: var(--fw-medium);
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   NAV + FILTER CHIPS
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-nav { display: flex; align-items: center; gap: 2px; }
+
+.nx-nav-item {
+  height: 30px; padding: 0 var(--sp-3);
+  display: inline-flex; align-items: center; gap: 7px;
+  border-radius: var(--r-sm);
+  color: var(--tx-2);
+  font: var(--fw-medium) 12.5px/1 var(--ff);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
+  border: 1px solid transparent;
+}
+.nx-nav-item:hover  { background: var(--bg-2); color: var(--tx-1); }
+.nx-nav-item.active {
+  background: var(--ac-wash);
+  color: var(--tx-1);
+  border-color: color-mix(in oklab, var(--ac) 30%, transparent);
+}
+.nx-nav-item.active .nx-nav-dot { background: var(--ac); }
+.nx-nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--tx-4); }
+
+.nx-filter-chip {
+  height: 26px; padding: 0 10px;
+  border-radius: var(--r-full);
+  display: inline-flex; align-items: center; gap: 5px;
+  font: var(--fw-medium) 11.5px/1 var(--ff);
+  color: var(--tx-2);
+  background: var(--bg-1);
+  border: 1px solid var(--bd-1);
+  cursor: pointer;
+  transition: background var(--dur-fast),
+              color var(--dur-fast),
+              border-color var(--dur-fast);
+  white-space: nowrap;
+}
+.nx-filter-chip:hover            { color: var(--tx-1); border-color: var(--bd-2); }
+.nx-filter-chip[data-on="1"] {
+  background: var(--ac-wash);
+  color: var(--tx-1);
+  border-color: color-mix(in oklab, var(--ac) 35%, transparent);
+}
+.nx-filter-chip[data-on="1"] .nx-filter-x { color: var(--ac); }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   APPROVAL BANNER (Task Detail header strip)
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-approval {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--pad-card);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--sem-warn) 24%, transparent),
+    color-mix(in oklab, var(--sem-warn) 12%, transparent)
+  );
+  border-bottom: 1px solid color-mix(in oklab, var(--sem-warn) 30%, transparent);
+  border-left: 3px solid var(--sem-warn);
+  color: #fdd590;
+  font: var(--fw-medium) 12px/1.4 var(--ff);
+}
+.nx-approval-tag {
+  font-family: var(--ff-mono); font-size: 10.5px;
+  padding: 2px 6px; border-radius: 4px;
+  background: color-mix(in oklab, var(--sem-warn) 28%, transparent);
+  color: #fff3d6;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   TOAST — dispatched / saved / approved
+   ════════════════════════════════════════════════════════════════════════ */
+.nx-toast {
+  position: absolute;
+  left: 50%; bottom: 20px;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid color-mix(in oklab, var(--ac) 40%, var(--bd-3));
+  color: var(--tx-1);
+  font-size: 12px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: var(--sh-3);
+  z-index: var(--z-toast);
+  animation: nx-toast-in .22s var(--ease);
+}
+@keyframes nx-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+}
+.nx-toast .nx-toast-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ac);
+  box-shadow: 0 0 8px var(--ac);
+  animation: nx-pulse 1.4s ease-in-out infinite;
+}
+@keyframes nx-pulse { 50% { opacity: 0.35; } }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   UTILITIES — micro bar, sparkline canvas, screen flex shell
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* Inline progress bar — used in sidebar stats, audit token usage */
+.nx-microbar {
+  display: inline-block; width: 100%; height: 4px;
+  background: var(--bd-1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.nx-microbar > i {
+  display: block; height: 100%;
+  background: var(--ac);
+  border-radius: 2px;
+}
+
+/* Screen flex shell — fills its container */
+.nx-screen {
+  height: 100%;
+  display: flex; flex-direction: column;
+}

@@ -1,74 +1,86 @@
-{% extends "base.html" %}
+{% extends "_layout.html" %}
+{% import "_macros.html.j2" as nx %}
+{% set active_nav = "tasks" %}
 
-{% block title %}Tasks ({{ tasks|length }}) — Scout HQ{% endblock %}
+{% block title %}Tasks — Nexus HQ{% endblock %}
 
-{% block header_extra %}
-  <span class="header-count">{{ tasks|length }} task{% if tasks|length != 1 %}s{% endif %}</span>
-{% endblock %}
+{% block main %}
+<div class="nx-page">
 
-{% block content %}
-<div class="list-layout">
-
-  {# ── Main column ── #}
-  <div class="list-main">
-
-    {# ── Filter bar ── #}
-    <div class="filter-bar">
-      <div class="filter-group">
-        <span class="filter-label">Category</span>
-        <a href="/?{% if current_status %}status={{ current_status }}{% endif %}"
-           class="chip {% if not current_category %}active{% endif %}">All</a>
-        {% for cat in categories %}
-          <a href="/?category={{ cat }}{% if current_status %}&status={{ current_status }}{% endif %}"
-             class="chip {% if current_category == cat %}active{% endif %}">{{ cat }}</a>
-        {% endfor %}
-      </div>
-
-      <span class="filter-divider">|</span>
-
-      <div class="filter-group">
-        <span class="filter-label">Status</span>
-        <a href="/?{% if current_category %}category={{ current_category }}{% endif %}"
-           class="chip {% if not current_status %}active{% endif %}">All</a>
-        {% for s in statuses %}
-          <a href="/?status={{ s }}{% if current_category %}&category={{ current_category }}{% endif %}"
-             class="chip {% if current_status == s %}active{% endif %}">{{ s }}</a>
-        {% endfor %}
-      </div>
+  {# ── Filter bar ────────────────────────────────────────────────────────── #}
+  <div class="nx-filter-bar">
+    <div class="nx-pillgroup">
+      <button class="nx-pill{% if current_domain == 'all' %} active{% endif %}"
+              hx-get="/?domain=all{% if current_status %}&status={{ current_status }}{% endif %}"
+              hx-target="#task-table-wrap" hx-push-url="true">
+        All
+        <span class="nx-pill-count">{{ domain_counts.get('all', 0) }}</span>
+      </button>
+      {% for d in domains %}
+      <button class="nx-pill{% if current_domain == d %} active{% endif %}"
+              data-domain="{{ d }}"
+              hx-get="/?domain={{ d }}{% if current_status %}&status={{ current_status }}{% endif %}"
+              hx-target="#task-table-wrap" hx-push-url="true">
+        {{ d | title }}
+        <span class="nx-pill-count">{{ domain_counts.get(d, 0) }}</span>
+      </button>
+      {% endfor %}
     </div>
 
-    {# ── Task table ── #}
-    <table class="task-table">
-      <thead>
-        <tr>
-          <th class="col-priority">Priority</th>
-          <th>Title</th>
-          <th class="col-status">Status</th>
-          <th class="col-category">Category</th>
-          <th class="col-due">Due</th>
-        </tr>
-      </thead>
-      <tbody id="task-list">
-        {% include "_partials/task_list_body.html" %}
-      </tbody>
-    </table>
+    <div class="nx-filter-sep"></div>
 
-  </div>{# end list-main #}
+    {% set s = current_status or 'open' %}
+    {{ nx.filter_chip("Status: " ~ (s | title), on=(current_status is not none),
+       hx={"hx_get": "/?domain=" ~ (current_domain or 'all'),
+           "hx_target": "#task-table-wrap", "hx_push_url": "true"}) }}
 
-  {# ── Sidebar ── #}
-  <aside class="list-sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-heading">
-        ⭐ Pinned entities
-        <a href="/entities" class="sidebar-manage-link">manage</a>
-      </div>
-      <div hx-get="/entities/pinned"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <p class="sidebar-empty">Loading…</p>
-      </div>
+    <div style="flex:1"></div>
+    <span class="nx-result-count nx-mono">{{ tasks | length }} tasks</span>
+
+    <button class="nx-btn primary"
+            hx-get="/tasks/new" hx-target="#drawer" hx-swap="innerHTML">
+      {{ nx.icon("plus", 13) }} New task
+    </button>
+  </div>
+
+  {# ── Two-column layout: table + sidebar ────────────────────────────────── #}
+  <div class="nx-list-layout">
+
+    <div id="task-table-wrap">
+      {% include "tasks/_table.html" %}
     </div>
-  </aside>
 
-</div>{# end list-layout #}
+    <aside class="nx-sidebar">
+      <div class="nx-card">
+        <div class="nx-card-hd"><h3>Open by domain</h3></div>
+        <div class="nx-card-bd" style="display:flex;flex-direction:column;gap:var(--sp-2)">
+          {% for d in domains %}
+          <div style="display:flex;align-items:center;gap:var(--sp-2)">
+            {{ nx.domain_pill(d) }}
+            <span class="nx-mono" style="font-size:var(--fs-sm);color:var(--tx-2);margin-left:auto">
+              {{ domain_counts.get(d, 0) }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="nx-card"
+           hx-get="/agents/pulse" hx-trigger="load, every 10s" hx-swap="innerHTML">
+        {% include "agents/_pulse.html" %}
+      </div>
+
+      <div class="nx-card">
+        <div class="nx-card-hd">
+          <h3>Pinned entities</h3>
+          <a href="/entities" class="nx-link" style="font-size:var(--fs-sm)">Browse</a>
+        </div>
+        <div class="nx-card-bd">
+          {% include "_partials/pinned_entities_list.html" %}
+        </div>
+      </div>
+    </aside>
+  </div>
+
+</div>
 {% endblock %}
