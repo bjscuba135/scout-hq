@@ -1,0 +1,37 @@
+{
+  "name": "Scout HQ — 1st Beetley",
+  "short_name": "Scout HQ",
+  "description": "Task cockpit for 1st Beetley Scout Group GLV",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#7413dc",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "All tasks",
+      "url": "/",
+      "description": "View all open tasks"
+    },
+    {
+      "name": "High priority",
+      "url": "/?priority=high&status=open",
+      "description": "High priority open tasks"
+    }
+  ]
+}
