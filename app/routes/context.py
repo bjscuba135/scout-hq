@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,6 +41,14 @@ def _request_user(request: Request) -> str:
 class AttachEntities(BaseModel):
     entity_names: list[str] = []
     entity_types: dict[str, str] = {}  # name → type, injected by htmx:configRequest
+
+    @field_validator("entity_names", mode="before")
+    @classmethod
+    def coerce_to_list(cls, v):
+        """json-enc sends a bare string when only one checkbox is checked."""
+        if isinstance(v, str):
+            return [v] if v.strip() else []
+        return v or []
 
 class DetachEntity(BaseModel):
     entity_name: str
@@ -216,19 +224,30 @@ async def _get_panel_data(task: Task, session: AsyncSession) -> dict:
     if manual:
         query += " " + " ".join(e.entity_name for e in manual[:5])
 
-    # Fetch suggestions, filter already-attached, cap at 10
     client = get_nexus_client()
+
+    # Try semantic suggestions; fall back to popular entities on LightRAG error
     data = await client.query_context(query)
     raw = data.get("entities", [])[:15]
-    suggestions = [
-        {
-            "name": e.get("entity_name", ""),
-            "type": e.get("entity_type", ""),
-            "description": e.get("description", ""),
-        }
-        for e in raw
-        if e.get("entity_name") and e.get("entity_name") not in attached_names
-    ][:10]
+
+    if raw:
+        suggestions = [
+            {
+                "name": e.get("entity_name", ""),
+                "type": e.get("entity_type", ""),
+                "description": e.get("description", ""),
+            }
+            for e in raw
+            if e.get("entity_name") and e.get("entity_name") not in attached_names
+        ][:10]
+    else:
+        # /query/data failed or returned nothing — show popular entities as fallback
+        popular = await client.popular_entities(limit=30)
+        suggestions = [
+            {"name": n, "type": "", "description": ""}
+            for n in popular
+            if n not in attached_names
+        ][:10]
 
     return {"attached": attached, "suggestions": suggestions}
 
