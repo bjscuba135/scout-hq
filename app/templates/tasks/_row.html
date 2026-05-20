@@ -1,8 +1,8 @@
 {% import "_macros.html.j2" as nx %}
 <tr id="task-{{ task.id }}"
     class="{% if task.status == 'done' %}done{% endif %}"
-    hx-get="/tasks/{{ task.id }}"
-    hx-target="#main" hx-select="#main" hx-push-url="true">
+    style="cursor:pointer"
+    onclick="window.location='/tasks/{{ task.id }}'"
 
   {# Checkbox — consumes click so it doesn't open the detail #}
   <td hx-patch="/tasks/{{ task.id }}"

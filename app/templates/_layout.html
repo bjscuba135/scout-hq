@@ -9,7 +9,7 @@
   <title>{% block title %}Nexus HQ{% endblock %}</title>
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#13161e">
-  {# Google Fonts omitted — app runs on a local network; Inter/JetBrains Mono fall back to system-ui / ui-monospace #}
+  {# Fonts: system-ui fallbacks — no CDN dependency on a local network #}
   <link rel="stylesheet" href="{{ url_for('static', path='css/tokens.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/components.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/layout.css') }}">
@@ -25,10 +25,13 @@
       } catch(e) {}
     })();
   </script>
-  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" crossorigin="anonymous"></script>
+  {# HTMX + json-enc served locally — no CDN, no external requests #}
+  <script src="{{ url_for('static', path='js/htmx.min.js') }}"></script>
+  <script src="{{ url_for('static', path='js/json-enc.js') }}"></script>
   <script src="{{ url_for('static', path='app.js') }}" defer></script>
 </head>
-<body class="nx-root" hx-boost="true">
+{# hx-ext="json-enc" makes HTMX send forms as JSON — required for FastAPI Pydantic bodies #}
+<body class="nx-root" hx-boost="true" hx-ext="json-enc">
 {% import "_macros.html.j2" as nx %}
 
 {% set _active = active_nav | default('tasks') %}
@@ -50,6 +53,8 @@
     <div class="nx-logo-env">vm-ai · 192.168.10.29</div>
   </div>
   <nav class="nx-nav">
+    {# Plain <a href> — hx-boost handles these as smooth full-page swaps.
+       No explicit hx-get/hx-target so there is no conflict. #}
     {% set _nav = [
       ("tasks",     "Tasks",     "list"),
       ("ask",       "Ask",       "search"),
@@ -60,8 +65,7 @@
       ("settings",  "Settings",  "cmd"),
     ] %}
     {% for id, label, ico in _nav %}
-      <a href="/{{ id }}" class="nx-nav-item{% if _active == id %} active{% endif %}"
-         hx-get="/{{ id }}" hx-target="#main" hx-select="#main" hx-push-url="true">
+      <a href="/{{ id }}" class="nx-nav-item{% if _active == id %} active{% endif %}">
         {{ nx.icon(ico, 14) }}
         {{ label }}
         {% if _active == id %}<span class="nx-nav-dot"></span>{% endif %}

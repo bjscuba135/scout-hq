@@ -47,7 +47,7 @@
         {% endif %}
       </div>
       <a class="nx-approval-title" href="/tasks/{{ task.id }}"
-         hx-get="/tasks/{{ task.id }}" hx-target="#main" hx-select="#main" hx-push-url="true">
+         href="/tasks/{{ task.id }}">
         {{ task.title }}
       </a>
       {% if task.body %}
