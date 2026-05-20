@@ -51,6 +51,7 @@
     </div>
 
     <aside class="nx-sidebar">
+      {# Domain counts card — rendered server-side, no extra requests #}
       <div class="nx-card">
         <div class="nx-card-hd"><h3>Open by domain</h3></div>
         <div class="nx-card-bd" style="display:flex;flex-direction:column;gap:var(--sp-2)">
@@ -65,18 +66,25 @@
         </div>
       </div>
 
-      <div class="nx-card"
-           hx-get="/agents/pulse" hx-trigger="load, every 10s" hx-swap="innerHTML">
-        {% include "agents/_pulse.html" %}
-      </div>
-
+      {# Pinned entities — server-side from DB, no LightRAG calls #}
       <div class="nx-card">
         <div class="nx-card-hd">
           <h3>Pinned entities</h3>
           <a href="/entities" class="nx-link" style="font-size:var(--fs-sm)">Browse</a>
         </div>
         <div class="nx-card-bd">
-          {% include "_partials/pinned_entities_list.html" %}
+          {% if pins %}
+            {% for pin in pins %}
+            <div style="padding:var(--sp-1) 0;font-size:var(--fs-sm)">
+              <a href="/entities/{{ pin.entity_name | urlencode }}"
+                 style="color:var(--tx-2);text-decoration:none">
+                {{ pin.entity_name }}
+              </a>
+            </div>
+            {% endfor %}
+          {% else %}
+            <span style="color:var(--tx-4);font-size:var(--fs-sm)">No pinned entities yet.</span>
+          {% endif %}
         </div>
       </div>
     </aside>

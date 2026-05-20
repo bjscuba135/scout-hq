@@ -11,7 +11,7 @@ from sqlalchemy import case, func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import VALID_DOMAINS, VALID_PRIORITIES, VALID_STATUSES
-from app.db.models import Task
+from app.db.models import EntityPin, Task
 from app.db.session import get_session
 from app.templating import get_templates
 
@@ -107,6 +107,11 @@ async def list_tasks(
         domain_counts[d or "scouting"] = c
         domain_counts["all"] += c
 
+    pins_result = await session.execute(
+        select(EntityPin).order_by(EntityPin.entity_name).limit(20)
+    )
+    pins = list(pins_result.scalars())
+
     ctx = {
         "tasks": tasks,
         "current_domain": domain or "all",
@@ -116,6 +121,7 @@ async def list_tasks(
         "domain_counts": domain_counts,
         "statuses": list(VALID_STATUSES),
         "today": date.today(),
+        "pins": pins,
     }
 
     if _is_htmx(request):
