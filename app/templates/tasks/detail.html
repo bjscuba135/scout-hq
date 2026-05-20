@@ -9,7 +9,7 @@
 
   {# Breadcrumb #}
   <div class="nx-breadcrumb">
-    <a href="/" hx-get="/" hx-target="#main" hx-push-url="true">Tasks</a>
+    <a href="/" hx-get="/" hx-target="#main" hx-select="#main" hx-push-url="true">Tasks</a>
     <span>›</span>
     {% if task.domain %}{{ nx.domain_pill(task.domain) }}{% endif %}
     <span class="nx-breadcrumb-title">{{ task.title }}</span>

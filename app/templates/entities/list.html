@@ -39,7 +39,7 @@
             <a href="/entities/{{ name | urlencode }}"
                class="nx-ent-tag"
                hx-get="/entities/{{ name | urlencode }}"
-               hx-target="#main" hx-push-url="true">
+               hx-target="#main" hx-select="#main" hx-push-url="true">
               {{ nx.entity_icon("system", 16) }}
               <span>{{ name }}</span>
             </a>

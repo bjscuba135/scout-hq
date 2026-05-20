@@ -8,7 +8,7 @@
 <div class="nx-page">
 
   <div class="nx-breadcrumb">
-    <a href="/entities" hx-get="/entities" hx-target="#main" hx-push-url="true">Entities</a>
+    <a href="/entities" hx-get="/entities" hx-target="#main" hx-select="#main" hx-push-url="true">Entities</a>
     <span>›</span>
     <span class="nx-breadcrumb-title">{{ entity_name }}</span>
   </div>
@@ -59,7 +59,7 @@
           <table class="nx-table">
             <tbody>
               {% for task in linked_tasks %}
-              <tr hx-get="/tasks/{{ task.id }}" hx-target="#main" hx-push-url="true">
+              <tr hx-get="/tasks/{{ task.id }}" hx-target="#main" hx-select="#main" hx-push-url="true">
                 <td>{{ nx.priority_badge(task.priority) }}</td>
                 <td style="color:var(--tx-1);font-weight:var(--fw-medium)">{{ task.title }}</td>
                 <td>{{ nx.status_badge(task.status) }}</td>
@@ -81,7 +81,7 @@
           {% for e in related %}
           <a href="/entities/{{ e.entity_name | urlencode }}"
              hx-get="/entities/{{ e.entity_name | urlencode }}"
-             hx-target="#main" hx-push-url="true"
+             hx-target="#main" hx-select="#main" hx-push-url="true"
              style="text-decoration:none">
             <div style="display:flex;align-items:center;gap:var(--sp-2)">
               {{ nx.entity_icon(e.entity_type | lower if e.entity_type else "system", 18) }}

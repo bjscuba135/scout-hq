@@ -9,9 +9,7 @@
   <title>{% block title %}Nexus HQ{% endblock %}</title>
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#13161e">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {# Google Fonts omitted — app runs on a local network; Inter/JetBrains Mono fall back to system-ui / ui-monospace #}
   <link rel="stylesheet" href="{{ url_for('static', path='css/tokens.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/components.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='css/layout.css') }}">
@@ -63,7 +61,7 @@
     ] %}
     {% for id, label, ico in _nav %}
       <a href="/{{ id }}" class="nx-nav-item{% if _active == id %} active{% endif %}"
-         hx-get="/{{ id }}" hx-target="#main" hx-push-url="true">
+         hx-get="/{{ id }}" hx-target="#main" hx-select="#main" hx-push-url="true">
         {{ nx.icon(ico, 14) }}
         {{ label }}
         {% if _active == id %}<span class="nx-nav-dot"></span>{% endif %}

@@ -122,6 +122,16 @@ async def list_tasks(
     return templates.TemplateResponse(request, "tasks/list.html", ctx)
 
 
+# ── New task drawer — MUST be before /tasks/{task_id} to avoid UUID capture ──
+
+@router.get("/tasks/new", response_class=HTMLResponse)
+async def new_task_drawer(request: Request):
+    return templates.TemplateResponse(
+        request, "tasks/_drawer.html",
+        {"task": None, "domains": sorted(VALID_DOMAINS)}
+    )
+
+
 # ── Detail view ───────────────────────────────────────────────────────────────
 
 @router.get("/tasks/{task_id}", response_class=HTMLResponse)
@@ -132,16 +142,6 @@ async def get_task(request: Request, task_id: uuid.UUID, session: Session):
     return templates.TemplateResponse(
         request, "tasks/detail.html",
         {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()}
-    )
-
-
-# ── New task drawer ───────────────────────────────────────────────────────────
-
-@router.get("/tasks/new", response_class=HTMLResponse)
-async def new_task_drawer(request: Request):
-    return templates.TemplateResponse(
-        request, "tasks/_drawer.html",
-        {"task": None, "domains": sorted(VALID_DOMAINS)}
     )
 
 

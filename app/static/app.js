@@ -111,6 +111,19 @@ function _flashCopyBtn() {
 }
 
 
+// ── Domain pill active state — sync with URL after HTMX partial swaps ────────
+// When HTMX swaps only #task-table-wrap, the pill bar doesn't re-render.
+// This listener reads the URL and keeps pill active classes in sync.
+
+document.body.addEventListener('htmx:afterSettle', function () {
+  var params = new URLSearchParams(window.location.search);
+  var domain = params.get('domain') || 'all';
+  document.querySelectorAll('.nx-pill').forEach(function (pill) {
+    var d = pill.dataset.domain || 'all';
+    pill.classList.toggle('active', d === domain);
+  });
+});
+
 // ── Tweaks: accent / mode / density — persisted in localStorage ──────────────
 
 function setTweak(key, value) {
