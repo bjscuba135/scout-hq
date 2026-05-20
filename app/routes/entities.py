@@ -46,12 +46,26 @@ async def _all_pins(session: AsyncSession) -> list[EntityPin]:
 async def entities_page(request: Request, session: Session):
     templates = get_templates()
     pins = await _all_pins(session)
-    popular = await get_nexus_client().popular_entities(limit=30)
     pinned_names = {p.entity_name for p in pins}
+    # popular entities are loaded lazily via HTMX to avoid blocking the page
     return templates.TemplateResponse(
         request,
         "entities/list.html",
-        {"pins": pins, "popular": popular, "pinned_names": pinned_names},
+        {"pins": pins, "pinned_names": pinned_names},
+    )
+
+
+@router.get("/entities/popular", response_class=HTMLResponse)
+async def entities_popular(request: Request, session: Session):
+    """HTMX lazy-load target for popular entities grid."""
+    templates = get_templates()
+    popular = await get_nexus_client().popular_entities(limit=30)
+    pins = await _all_pins(session)
+    pinned_names = {p.entity_name for p in pins}
+    return templates.TemplateResponse(
+        request,
+        "entities/_popular.html",
+        {"popular": popular, "pinned_names": pinned_names},
     )
 
 

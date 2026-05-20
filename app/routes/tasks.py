@@ -68,6 +68,7 @@ def _is_htmx(request: Request) -> bool:
 
 # ── List view ─────────────────────────────────────────────────────────────────
 
+@router.get("/tasks", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def list_tasks(
     request: Request,

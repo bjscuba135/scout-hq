@@ -1,0 +1,29 @@
+{% import "_macros.html.j2" as nx %}
+{% if popular %}
+<div class="nx-card-hd"><h3>Popular in Nexus</h3></div>
+<div class="nx-card-bd" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
+  {% for name in popular %}
+  <div style="display:flex;align-items:center;gap:var(--sp-1)">
+    <a href="/entities/{{ name | urlencode }}" class="nx-ent-tag">
+      {{ nx.entity_icon("system", 16) }}
+      <span>{{ name }}</span>
+    </a>
+    {% if name not in pinned_names %}
+    <button class="nx-iconbtn"
+            hx-post="/entities/pin"
+            hx-vals='{"entity_name": {{ name | jsonstr }}}'
+            hx-target="#pinned-list" hx-swap="innerHTML"
+            title="Pin">
+      {{ nx.icon("plus", 11) }}
+    </button>
+    {% else %}
+    <span style="color:var(--ac);font-size:10px;line-height:1">●</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="nx-card-bd" style="color:var(--tx-4);font-size:var(--fs-sm)">
+  No entities found in Nexus yet.
+</div>
+{% endif %}

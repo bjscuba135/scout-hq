@@ -13,7 +13,7 @@
 
   <div class="nx-list-layout">
 
-    {# ── Main: search + popular ───────────────────────────────────────── #}
+    {# ── Main: search + popular (lazy-loaded) ─────────────────────────── #}
     <div>
       <div class="nx-card" style="margin-bottom:var(--sp-4)">
         <div class="nx-card-bd">
@@ -30,35 +30,15 @@
         </div>
       </div>
 
-      {% if popular %}
-      <div class="nx-card">
-        <div class="nx-card-hd"><h3>Popular in Nexus</h3></div>
-        <div class="nx-card-bd" style="display:flex;flex-wrap:wrap;gap:var(--sp-2)">
-          {% for name in popular %}
-          <div style="display:flex;align-items:center;gap:var(--sp-2)">
-            <a href="/entities/{{ name | urlencode }}"
-               class="nx-ent-tag"
-               hx-get="/entities/{{ name | urlencode }}"
-               href="/entities/{{ name | urlencode }}">
-              {{ nx.entity_icon("system", 16) }}
-              <span>{{ name }}</span>
-            </a>
-            {% if name not in pinned_names %}
-            <button class="nx-iconbtn"
-                    hx-post="/entities/pin"
-                    hx-vals='{"entity_name": {{ name | jsonstr }}}'
-                    hx-target="#pinned-list" hx-swap="innerHTML"
-                    title="Pin">
-              {{ nx.icon("plus", 11) }}
-            </button>
-            {% else %}
-            <span style="color:var(--ac);font-size:12px">●</span>
-            {% endif %}
-          </div>
-          {% endfor %}
+      {# Popular entities loaded after page renders — avoids blocking on LightRAG #}
+      <div class="nx-card"
+           hx-get="/entities/popular"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="nx-card-bd" style="color:var(--tx-4);font-size:var(--fs-sm)">
+          Loading popular entities…
         </div>
       </div>
-      {% endif %}
     </div>
 
     {# ── Sidebar: pinned ──────────────────────────────────────────────── #}

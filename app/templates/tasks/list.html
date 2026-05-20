@@ -11,7 +11,7 @@
   <div class="nx-filter-bar">
     <div class="nx-pillgroup">
       <button class="nx-pill{% if current_domain == 'all' %} active{% endif %}"
-              hx-get="/?domain=all{% if current_status %}&status={{ current_status }}{% endif %}"
+              hx-get="/tasks?domain=all{% if current_status %}&status={{ current_status }}{% endif %}"
               hx-target="#task-table-wrap" hx-push-url="true">
         All
         <span class="nx-pill-count">{{ domain_counts.get('all', 0) }}</span>
@@ -19,7 +19,7 @@
       {% for d in domains %}
       <button class="nx-pill{% if current_domain == d %} active{% endif %}"
               data-domain="{{ d }}"
-              hx-get="/?domain={{ d }}{% if current_status %}&status={{ current_status }}{% endif %}"
+              hx-get="/tasks?domain={{ d }}{% if current_status %}&status={{ current_status }}{% endif %}"
               hx-target="#task-table-wrap" hx-push-url="true">
         {{ d | title }}
         <span class="nx-pill-count">{{ domain_counts.get(d, 0) }}</span>
@@ -31,7 +31,7 @@
 
     {% set s = current_status or 'open' %}
     {{ nx.filter_chip("Status: " ~ (s | title), on=(current_status is not none),
-       hx={"hx_get": "/?domain=" ~ (current_domain or 'all'),
+       hx={"hx_get": "/tasks?domain=" ~ (current_domain or 'all'),
            "hx_target": "#task-table-wrap", "hx_push_url": "true"}) }}
 
     <div style="flex:1"></div>
