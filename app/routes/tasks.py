@@ -118,7 +118,7 @@ async def list_tasks(
     }
 
     if _is_htmx(request):
-        return templates.TemplateResponse(request, "_partials/task_list_body.html", ctx)
+        return templates.TemplateResponse(request, "tasks/_table.html", ctx)
     return templates.TemplateResponse(request, "tasks/list.html", ctx)
 
 
