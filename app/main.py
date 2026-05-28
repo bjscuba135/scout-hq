@@ -16,12 +16,19 @@ from app.routes import agents, api, approvals, ask, audit, context, entities, se
 APP_DIR = Path(__file__).parent
 
 # Paths that skip Basic Auth
-_PUBLIC_PATHS = {"/healthz"}
+_PUBLIC_PATHS = {"/healthz", "/livez"}
+_UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    yield
+    try:
+        yield
+    finally:
+        from app.nexus import get_nexus_client
+
+        if get_nexus_client.cache_info().currsize:
+            await get_nexus_client().aclose()
 
 
 app = FastAPI(
@@ -36,6 +43,18 @@ app = FastAPI(
 async def basic_auth_middleware(request: Request, call_next):
     if request.url.path in _PUBLIC_PATHS:
         return await call_next(request)
+
+    if request.method in _UNSAFE_METHODS:
+        origin = request.headers.get("Origin")
+        referer = request.headers.get("Referer")
+        source = origin or referer
+        if source:
+            expected = f"{request.url.scheme}://{request.url.netloc}"
+            if not source.startswith(expected):
+                return JSONResponse(
+                    status_code=403,
+                    content={"detail": "Cross-origin request rejected"},
+                )
 
     settings = get_settings()
     auth_header = request.headers.get("Authorization", "")
@@ -82,6 +101,11 @@ app.include_router(approvals.router)
 app.include_router(agents.router)
 app.include_router(audit.router)
 app.include_router(settings.router)
+
+
+@app.get("/livez", tags=["ops"])
+async def livez():
+    return {"status": "ok"}
 
 
 @app.get("/healthz", tags=["ops"])

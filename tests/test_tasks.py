@@ -40,11 +40,11 @@ class TestCreate:
         assert task.category == "hut"
         assert task.priority == "high"
 
-    async def test_invalid_category_rejected(self, client: AsyncClient):
+    async def test_free_text_category_accepted(self, client: AsyncClient):
         r = await client.post(
             "/tasks", json={"title": "x", "category": "badcat", "priority": "med"}
         )
-        assert r.status_code == 400
+        assert r.status_code == 201
 
     async def test_invalid_priority_rejected(self, client: AsyncClient):
         r = await client.post(

@@ -19,6 +19,10 @@ templates = get_templates()
 Session = Annotated[AsyncSession, Depends(get_session)]
 
 
+def _is_htmx(request: Request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
 def _group_by_day(runs: list[TaskRun]) -> list[dict]:
     groups: dict[str, list] = {}
     for run in runs:
@@ -51,4 +55,6 @@ async def audit_page(
         "runs": runs,
         "next_cursor": runs[-1].started_at.isoformat() if runs else None,
     }
+    if before and _is_htmx(request):
+        return templates.TemplateResponse(request, "audit/_feed.html", ctx)
     return templates.TemplateResponse(request, "audit/list.html", ctx)

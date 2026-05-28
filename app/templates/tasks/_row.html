@@ -2,7 +2,7 @@
 <tr id="task-{{ task.id }}"
     class="{% if task.status == 'done' %}done{% endif %}"
     style="cursor:pointer"
-    onclick="window.location='/tasks/{{ task.id }}'"
+    onclick="window.location='/tasks/{{ task.id }}'">
 
   {# Checkbox — consumes click so it doesn't open the detail #}
   <td hx-patch="/tasks/{{ task.id }}"

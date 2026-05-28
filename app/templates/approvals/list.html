@@ -41,13 +41,12 @@
         <span class="nx-badge s-awaiting">Approval needed</span>
         <div style="flex:1"></div>
         {% if task.due_date %}
-        <span class="nx-mono" style="font-size:var(--fs-xs);color:{% if task.due_date < today %}var(--sem-err){% else %}var(--tx-3){% endif %}">
+        <span class="nx-mono{% if task.due_date < today %} overdue{% endif %}" style="font-size:var(--fs-xs);color:{% if task.due_date < today %}var(--sem-err){% else %}var(--tx-3){% endif %}">
           Due {{ task.due_date.strftime('%d %b') }}
         </span>
         {% endif %}
       </div>
-      <a class="nx-approval-title" href="/tasks/{{ task.id }}"
-         href="/tasks/{{ task.id }}">
+      <a class="nx-approval-title" href="/tasks/{{ task.id }}">
         {{ task.title }}
       </a>
       {% if task.body %}

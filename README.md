@@ -1,17 +1,28 @@
-# Scout HQ
+# Nexus HQ
 
-Personal web cockpit for Ben Colley, Group Lead Volunteer at 1st Beetley Scout Group.
+Personal operating cockpit for The Nexus Constellation.
 
-Lives at `https://scouthq.local` on the home network, and via Tailscale when away.
+The repository is still named `scout-hq` for compatibility with the existing deployment pipeline, but the app is now branded and packaged as Nexus HQ.
+
+## What it does today
+
+Nexus HQ is a FastAPI + HTMX web app for operating the early Nexus system:
+
+- Task list and task detail workflows
+- Domain/category/status filtering
+- Entity pins and entity explorer surfaces backed by LightRAG context
+- Ask Nexus UI for querying the context graph
+- Approval queue, audit log, agent status, and agent settings screens
+- Basic Auth protecting browser/API access, with `/healthz` left public for ops checks
 
 ## Stack
 
 | Component | Choice |
 |---|---|
 | Web framework | FastAPI + HTMX 2.x + Jinja2 |
-| Database | Postgres 16 + pgvector |
-| Reverse proxy | Caddy 2 (internal CA) |
-| Deploy | DockHand from `bjscuba135/nexus-constellation` |
+| Database | Postgres 16 + pgvector-ready schema |
+| Context/RAG | LightRAG via `app/nexus/client.py` |
+| Deploy | DockHand from `bjscuba135/nexus-constellation`, currently under `stacks/ai/scout-hq/` |
 
 ## Development
 
@@ -25,9 +36,23 @@ SCOUTHQ_PG_HOST=localhost uvicorn app.main:app --reload --port 3200
 # Run migrations
 alembic upgrade head
 
-# Run tests (testcontainers spins up Postgres automatically)
+# Run tests
 pytest
 ```
+
+The local test suite uses the test database fixture in `tests/conftest.py`.
+
+## Key configuration
+
+Environment variables are loaded through `app/config.py`.
+
+Common settings:
+
+- `SCOUTHQ_PG_HOST`, `SCOUTHQ_PG_PORT`, `SCOUTHQ_PG_DB`, `SCOUTHQ_PG_USER`, `SCOUTHQ_PG_PASSWORD`
+- `SCOUTHQ_USERNAME`, `SCOUTHQ_PASSWORD`
+- `NEXUS_BASE_URL` for the LightRAG service
+- `LIGHTRAG_API_KEY` for the upcoming API-key auth path
+- `DISPATCHERS_CONFIG_PATH` for agent/dispatcher configuration
 
 ## Import legacy tasks
 
@@ -37,14 +62,13 @@ docker exec scout-hq python -m app.importers.tasks_json /import/tasks.json
 docker exec scout-hq python -m app.importers.tasks_md /import/TASKS.md
 ```
 
-## Phase status
+## Current roadmap
 
-- **Phase 1** — Skeleton service (current)
-- Phase 2 — Nexus context integration
-- Phase 3 — Dispatcher framework + approval gates
-- Phase 4 — Claude Code adapter
-- Phase 5 — Inbound ingestion (n8n flows)
-- Phase 6 — PWA + Tailscale
-- Phase 7+ — Additional adapters, multi-user
+The next stabilisation work is:
 
-See `Plan.md` in the Scout HQ project folder for full spec.
+1. Keep tests green as the Nexus HQ rebrand lands.
+2. Harden the LightRAG client for API-key auth plus JWT fallback.
+3. Pin and validate LightRAG before changing the ingest pipeline.
+4. Move from the old custom RAGAnything sidecar to LightRAG's built-in parser pipeline only after representative document tests pass.
+
+See `.hermes/plans/2026-05-26-nexus-hq-lightrag-raganything-plan.md` for the working forward plan.

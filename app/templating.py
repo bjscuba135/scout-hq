@@ -27,6 +27,7 @@ _NX_ICONS: dict[str, str] = {
     "refresh": '<path d="M3 8a5 5 0 0 1 8.5-3.5L13 6M13 3v3h-3M13 8a5 5 0 0 1-8.5 3.5L3 10M3 13v-3h3"/>',
     "check":   '<path d="M3 8l3 3 7-7"/>',
     "x":       '<path d="M4 4l8 8M12 4l-8 8"/>',
+    "doc":     '<path d="M5 2h5l3 3v9H5z"/><path d="M10 2v3h3"/><path d="M7 8h4M7 11h3"/>',
     # Entity type icons
     "ent_person":   '<circle cx="8" cy="5.5" r="2.2"/><path d="M3 13c0-2.4 2.2-4 5-4s5 1.6 5 4"/>',
     "ent_org":      '<rect x="4" y="7" width="8" height="6" rx="1"/><path d="M6 7V5a2 2 0 0 1 4 0v2"/><path d="M8 10v2"/>',

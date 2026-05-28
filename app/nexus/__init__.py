@@ -8,4 +8,5 @@ from app.nexus.client import NexusClient
 def get_nexus_client() -> NexusClient:
     """Return the application-wide NexusClient singleton."""
     from app.config import get_settings
-    return NexusClient(base_url=get_settings().nexus_base_url)
+    settings = get_settings()
+    return NexusClient(base_url=settings.nexus_base_url, api_key=settings.lightrag_api_key)

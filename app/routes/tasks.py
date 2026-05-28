@@ -163,9 +163,14 @@ async def create_task(request: Request, data: TaskCreate, session: Session):
     await session.refresh(task)
 
     if _is_htmx(request):
-        return templates.TemplateResponse(request, "_partials/task_row.html", {"task": task})
+        return templates.TemplateResponse(
+            request,
+            "tasks/_row.html",
+            {"task": task, "today": date.today()},
+            status_code=201,
+        )
     return templates.TemplateResponse(
-        request, "tasks/detail.html", {"task": task, "domains": sorted(VALID_DOMAINS)},
+        request, "tasks/detail.html", {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()},
         status_code=201
     )
 
@@ -200,10 +205,10 @@ async def patch_task(
             )
         if hx_target.startswith("task-"):
             return templates.TemplateResponse(
-                request, "_partials/task_row.html", {"task": task}
+                request, "tasks/_row.html", {"task": task, "today": date.today()}
             )
     return templates.TemplateResponse(
-        request, "tasks/detail.html", {"task": task, "domains": sorted(VALID_DOMAINS)}
+        request, "tasks/detail.html", {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()}
     )
 
 

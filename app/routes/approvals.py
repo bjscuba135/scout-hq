@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -57,6 +57,7 @@ async def approvals_page(request: Request, session: Session):
         "awaiting": awaiting,
         "recent": recent,
         "pending_count": len(pending),
+        "today": date.today(),
     }
     return templates.TemplateResponse(request, "approvals/list.html", ctx)
 

@@ -22,14 +22,19 @@
 {# ── ICONS ─────────────────────────────────────────────────────────────── #}
 {# Inline SVG glyphs. Define ONCE in your base layout — copy from
    components.jsx Icon() paths. In production prefer an SVG sprite. #}
-{% macro icon(name, size=14) -%}
+{% macro render_icon(name, size=14) -%}
+  {% set safe_name = name if name in nx_icons else "ent_object" %}
   {% set sw = 1.6 %}
   <svg width="{{ size }}" height="{{ size }}" viewBox="0 0 16 16"
        fill="none" stroke="currentColor" stroke-width="{{ sw }}"
        stroke-linecap="round" stroke-linejoin="round"
-       class="nx-icon nx-icon--{{ name }}">
-    {{ nx_icons[name]|safe }}
+       class="nx-icon nx-icon--{{ safe_name }}">
+    {{ nx_icons[safe_name]|safe }}
   </svg>
+{%- endmacro %}
+
+{% macro icon(name, size=14) -%}
+  {{ render_icon(name, size) }}
 {%- endmacro %}
 
 
@@ -55,7 +60,7 @@
   <button type="{{ type }}" class="nx-btn {{ variant }}"
           {% if disabled %}disabled{% endif %}
           {{ attrs(hx) }}>
-    {%- if icon %}{{ icon(icon, 14) }}{% endif %}
+    {%- if icon %}{{ render_icon(icon, 14) }}{% endif %}
     {{ label }}
     {%- if kbd %}<span class="nx-kbd">{{ kbd }}</span>{% endif %}
   </button>
@@ -118,9 +123,11 @@
 {%- endmacro %}
 
 {% macro entity_icon(type, size=22) -%}
-  <span class="nx-ent-icon" data-type="{{ type }}"
+  {% set normalized = (type or "object")|lower|replace("organization", "org")|replace("organisation", "org")|replace("document", "doc") %}
+  {% set safe_type = normalized if ("ent_" ~ normalized) in nx_icons else "object" %}
+  <span class="nx-ent-icon" data-type="{{ safe_type }}"
         style="width: {{ size }}px; height: {{ size }}px;">
-    {{ icon("ent_" ~ type, size * 0.62) }}
+    {{ icon("ent_" ~ safe_type, size * 0.62) }}
   </span>
 {%- endmacro %}
 

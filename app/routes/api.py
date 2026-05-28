@@ -110,6 +110,7 @@ async def api_list_tasks(
       q         free-text search on title + body (case-insensitive)
       limit     max results (default 200)
     """
+    limit = min(max(limit, 1), 500)
     stmt = select(Task)
     filters = []
     if status:

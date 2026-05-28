@@ -14,7 +14,7 @@
       <h1 style="font-size:var(--fs-xl);font-weight:var(--fw-semi);color:var(--tx-1);margin-bottom:var(--sp-5)">
         Ask the knowledge graph
       </h1>
-      <form hx-post="/ask" hx-target="#ask-result" hx-swap="innerHTML" hx-indicator="#ask-spinner">
+      <form hx-post="/ask" hx-target="#ask-result" hx-swap="innerHTML" hx-indicator="#ask-spinner" hx-ext="ignore:json-enc">
         <textarea class="nx-input nx-ask-textarea" name="query" required
                   placeholder="Ask anything about your domains…"
                   rows="3"

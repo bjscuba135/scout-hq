@@ -42,7 +42,7 @@ async def ask_query(
     client = get_nexus_client()
     t0 = time.monotonic()
     try:
-        data = await client.query_context(query)
+        data = await client.query_context(query, mode=mode)
         latency_ms = int((time.monotonic() - t0) * 1000)
         response_text = data.get("response", "") if isinstance(data, dict) else ""
         references = data.get("references", []) if isinstance(data, dict) else []

@@ -172,14 +172,16 @@ async def entity_detail(request: Request, entity_name: str, session: Session):
     ][:5]
 
     # Tasks linked to this entity (open/waiting only)
-    te_result = await session.execute(
-        select(TaskEntity).where(TaskEntity.entity_name == entity_name)
+    linked_result = await session.execute(
+        select(Task)
+        .join(TaskEntity, TaskEntity.task_id == Task.id)
+        .where(
+            TaskEntity.entity_name == entity_name,
+            Task.status.notin_(["done", "cancelled"]),
+        )
+        .order_by(Task.created_at.desc())
     )
-    linked_tasks = []
-    for te in te_result.scalars():
-        task = await session.get(Task, te.task_id)
-        if task and task.status not in ("done", "cancelled"):
-            linked_tasks.append(task)
+    linked_tasks = list(linked_result.scalars().unique())
 
     return templates.TemplateResponse(
         request,
