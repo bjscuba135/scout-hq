@@ -11,7 +11,7 @@ from sqlalchemy import case, func, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import VALID_DOMAINS, VALID_PRIORITIES, VALID_STATUSES
-from app.db.models import EntityPin, Task
+from app.db.models import EntityPin, Task, TaskRun
 from app.db.session import get_session
 from app.templating import get_templates
 
@@ -124,7 +124,9 @@ async def list_tasks(
         "pins": pins,
     }
 
-    if _is_htmx(request):
+    hx_target = request.headers.get("HX-Target", "")
+    hx_boosted = request.headers.get("HX-Boosted") == "true"
+    if _is_htmx(request) and (hx_target == "task-table-wrap" or not hx_boosted):
         return templates.TemplateResponse(request, "tasks/_table.html", ctx)
     return templates.TemplateResponse(request, "tasks/list.html", ctx)
 
@@ -201,7 +203,9 @@ async def patch_task(
         hx_target = request.headers.get("HX-Target", "")
         if hx_target == "task-main-col":
             return templates.TemplateResponse(
-                request, "_partials/task_main_col.html", {"task": task}
+                request,
+                "_partials/task_main_col.html",
+                {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()},
             )
         if hx_target.startswith("task-"):
             return templates.TemplateResponse(
@@ -243,7 +247,9 @@ async def append_note(
     await session.refresh(task)
 
     return templates.TemplateResponse(
-        request, "_partials/task_main_col.html", {"task": task}
+        request,
+        "_partials/task_main_col.html",
+        {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()},
     )
 
 
@@ -258,12 +264,26 @@ async def dispatch_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     task.status = "in_progress"
+    run = TaskRun(
+        task_id=task.id,
+        dispatcher=agent,
+        status="queued",
+        request_payload={
+            "task_id": str(task.id),
+            "title": task.title,
+            "owner": task.owner,
+            "source": "nexus_hq_dispatch_button",
+        },
+        log=f"Queued for {agent}; no live worker integration has acknowledged this task yet.",
+    )
+    session.add(run)
     await session.commit()
     short = str(task_id)[:8]
     return HTMLResponse(
-        f'<div id="toast" hx-swap-oob="true">'
-        f'<div class="nx-toast"><span class="nx-toast-dot"></span>'
-        f'<span>Dispatched {short}… → {agent}</span></div></div>'
+        f'<div class="nx-inline-status-msg">'
+        f'<strong>Queued {short} for {agent}.</strong> '
+        f'Check Approvals/Audit for progress; this button currently queues a TaskRun and does not stream an agent reply.'
+        f'</div>'
     )
 
 

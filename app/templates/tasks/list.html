@@ -29,10 +29,19 @@
 
     <div class="nx-filter-sep"></div>
 
-    {% set s = current_status or 'open' %}
-    {{ nx.filter_chip("Status: " ~ (s | title), on=(current_status is not none),
-       hx={"hx_get": "/tasks?domain=" ~ (current_domain or 'all'),
-           "hx_target": "#task-table-wrap", "hx_push_url": "true"}) }}
+    <label class="nx-filter-select">
+      <span>Status</span>
+      <select name="status" class="nx-input"
+              hx-get="/tasks?domain={{ current_domain or 'all' }}"
+              hx-trigger="change"
+              hx-target="#task-table-wrap"
+              hx-push-url="true">
+        <option value="" {% if current_status is none %}selected{% endif %}>All</option>
+        {% for status_name in statuses %}
+        <option value="{{ status_name }}" {% if current_status == status_name %}selected{% endif %}>{{ status_name | replace('_', ' ') | title }}</option>
+        {% endfor %}
+      </select>
+    </label>
 
     <div style="flex:1"></div>
     <span class="nx-result-count nx-mono">{{ tasks | length }} tasks</span>

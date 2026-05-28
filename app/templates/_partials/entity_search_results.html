@@ -1,21 +1,25 @@
 {# Search results for /entities page — swapped into #entity-search-results innerHTML #}
+{% import "_macros.html.j2" as nx %}
 {% if names %}
-<ul class="search-result-list">
+<div class="nx-entity-result-list">
   {% for name in names %}
-  <li class="search-result-item">
-    <a href="/entities/{{ name | urlencode }}" class="search-result-name">{{ name }}</a>
+  <div class="nx-entity-result-row">
+    <a href="/entities/{{ name | urlencode }}" class="nx-ent-tag">
+      {{ nx.entity_icon("system", 16) }}
+      <span>{{ name }}</span>
+    </a>
     {% if name in pinned_names %}
-    <span class="pin-star" title="Already pinned">⭐</span>
+    <span class="nx-pinned-mark" title="Already pinned">Pinned</span>
     {% else %}
-    <button class="btn-pin btn-sm"
+    <button class="nx-btn secondary nx-btn-sm"
             hx-post="/entities/pin"
             hx-vals='{"entity_name": {{ name | jsonstr }}}'
-            hx-target="#pinned-entities-list"
-            hx-swap="outerHTML">☆ Pin</button>
+            hx-target="#pinned-list"
+            hx-swap="innerHTML">{{ nx.icon("plus", 11) }} Pin {{ name }}</button>
     {% endif %}
-  </li>
+  </div>
   {% endfor %}
-</ul>
+</div>
 {% else %}
-<p style="color:var(--text-muted);font-size:0.85rem">No entities found for "{{ q }}".</p>
+<p style="color:var(--tx-4);font-size:var(--fs-sm)">No entities found for "{{ q }}".</p>
 {% endif %}

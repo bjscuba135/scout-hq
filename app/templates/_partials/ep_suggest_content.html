@@ -2,24 +2,24 @@
   Suggest list content — swapped into #ep-suggest-results by live search or initial load.
   Uses per-entity attach buttons (hx-vals) to avoid form+json-enc interaction issues.
 #}
+{% import "_macros.html.j2" as nx %}
 {% if suggestions %}
 <div class="suggest-list">
   {% for e in suggestions %}
   <div class="suggest-item" data-entity-type="{{ e.type | lower }}">
-    <span class="suggest-item-body">
+    <a href="/entities/{{ e.name | urlencode }}" class="nx-ent-tag suggest-item-body">
+      {{ nx.entity_icon(e.type or "system", 16) }}
       <span class="suggest-name">{{ e.name }}</span>
-      {% if e.type %}
-      <span class="entity-type-badge type-{{ e.type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.type }}</span>
-      {% endif %}
-      {% if e.description %}
-      <span class="suggest-desc">{{ e.description[:90] }}{% if e.description | length > 90 %}…{% endif %}</span>
-      {% endif %}
-    </span>
-    <button class="btn btn-secondary btn-sm ep-attach-one"
+      {% if e.type %}<span class="nx-ent-type">{{ e.type }}</span>{% endif %}
+    </a>
+    {% if e.description %}
+    <div class="suggest-desc">{{ e.description[:140] }}{% if e.description | length > 140 %}…{% endif %}</div>
+    {% endif %}
+    <button class="nx-btn secondary nx-btn-sm ep-attach-one"
             hx-post="/tasks/{{ task_id }}/entities/attach"
             hx-vals='{"entity_names": [{{ e.name | jsonstr }}], "entity_types": {"{{ e.name }}": "{{ e.type }}"}}'
             hx-target="#entities-panel"
-            hx-swap="innerHTML">+ Attach</button>
+            hx-swap="innerHTML">{{ nx.icon("plus", 11) }} Attach</button>
   </div>
   {% endfor %}
 </div>

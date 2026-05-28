@@ -21,7 +21,7 @@
         ("nexus",    "MCP & LightRAG", "node"),
       ] %}
       <a href="/settings/{{ item[0] }}"
-         class="nx-settings-nav-item{% if item[0] == 'agents' %} active{% endif %}">
+         class="nx-settings-nav-item{% if item[0] == selected_section %} active{% endif %}">
         {{ nx.icon(item[2], 13) }} {{ item[1] }}
       </a>
       {% endfor %}
@@ -86,7 +86,7 @@
       {% for agent in agents %}
       <div class="nx-card nx-settings-agent-row{% if selected and selected.id == agent.id %} selected{% endif %}"
            hx-get="/settings/agents?selected={{ agent.id }}"
-           hx-target=".nx-settings-config" hx-swap="innerHTML">
+           hx-target="#nx-settings-config" hx-swap="innerHTML">
         {{ nx.avatar(agent.id, agent.kind) }}
         <div style="flex:1">
           <div style="font-weight:var(--fw-medium);color:var(--tx-1);font-size:var(--fs-md)">{{ agent.name }}</div>
@@ -98,76 +98,8 @@
     </div>
 
     {# ── Config panel ─────────────────────────────────────────────────── #}
-    <div class="nx-settings-config">
-      {% if selected %}
-      <div class="nx-card-hd" style="padding:0 0 var(--sp-5)">
-        {{ nx.avatar(selected.id, selected.kind, "lg") }}
-        <div>
-          <h2 style="font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--tx-1)">{{ selected.name }}</h2>
-          <div class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-3)">{{ selected.id }}</div>
-        </div>
-      </div>
-
-      <form style="display:flex;flex-direction:column;gap:var(--sp-5)">
-        <div class="nx-settings-group">
-          <h3 class="nx-card-eyebrow" style="margin-bottom:var(--sp-3)">Identity</h3>
-          <div class="nx-field-row">
-            <div class="nx-field">
-              <label class="nx-label">Agent ID</label>
-              <input class="nx-input nx-mono" value="{{ selected.id }}" readonly
-                     style="opacity:0.6;cursor:not-allowed">
-            </div>
-            <div class="nx-field">
-              <label class="nx-label">Kind</label>
-              <select class="nx-input" name="kind">
-                {% for k in ["human","code","comms","pipe"] %}
-                <option value="{{ k }}" {% if selected.kind == k %}selected{% endif %}>{{ k }}</option>
-                {% endfor %}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="nx-settings-group">
-          <h3 class="nx-card-eyebrow" style="margin-bottom:var(--sp-3)">LLM routing</h3>
-          <div class="nx-field">
-            <label class="nx-label">Model alias</label>
-            <select class="nx-input" name="model">
-              {% for m in ["claude-sonnet-4-6","claude-haiku-4-5","gpt-4o","llama3-local"] %}
-              <option>{{ m }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="nx-field" style="margin-top:var(--sp-3)">
-            <label class="nx-label">Base URL</label>
-            <input class="nx-input nx-mono" value="http://192.168.10.29:4000" readonly
-                   style="opacity:0.6;cursor:not-allowed">
-          </div>
-        </div>
-
-        <div class="nx-settings-group">
-          <h3 class="nx-card-eyebrow" style="margin-bottom:var(--sp-3)">Safety</h3>
-          <div class="nx-field">
-            <label class="nx-label">Approval gate</label>
-            <select class="nx-input" name="approval_gate">
-              <option>Off</option>
-              <option>High-impact only</option>
-              <option>Outbound only</option>
-              <option selected>Always</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:var(--sp-2)">
-          {{ nx.button("Save changes", variant="primary") }}
-          {{ nx.button("Revert", variant="secondary") }}
-        </div>
-      </form>
-      {% else %}
-      <div style="color:var(--tx-4);font-size:var(--fs-md);padding:var(--sp-8)">
-        Select an agent to configure
-      </div>
-      {% endif %}
+    <div id="nx-settings-config" class="nx-settings-config">
+      {% include "settings/_config.html" %}
     </div>
 
   </div>

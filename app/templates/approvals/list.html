@@ -68,13 +68,20 @@
   <section class="nx-approval-section">
     <h2 class="nx-section-label">Awaiting agent</h2>
     {% for task in awaiting %}
+    {% set latest_run = (task.runs | sort(attribute='started_at') | last) if task.runs else none %}
     <div class="nx-card" style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5)">
-      {{ nx.avatar(task.owner) }}
+      {{ nx.avatar((latest_run.dispatcher if latest_run else task.owner), "pipe") }}
       <div style="flex:1">
         <div style="color:var(--tx-1);font-size:var(--fs-md);font-weight:var(--fw-medium)">{{ task.title }}</div>
-        <div style="color:var(--tx-3);font-size:var(--fs-sm)">Dispatched to {{ task.owner }}</div>
+        <div style="color:var(--tx-3);font-size:var(--fs-sm)">
+          {% if latest_run %}
+          Queued for {{ latest_run.dispatcher }} · {{ latest_run.status }}{% if latest_run.log %} — {{ latest_run.log }}{% endif %}
+          {% else %}
+          Marked in progress, but no agent run has been recorded yet.
+          {% endif %}
+        </div>
       </div>
-      {{ nx.status_badge("running") }}
+      {{ nx.status_badge(latest_run.status if latest_run else "running") }}
     </div>
     {% endfor %}
   </section>

@@ -1,0 +1,87 @@
+{% import "_macros.html.j2" as nx %}
+{% set section = selected_section or 'agents' %}
+
+{% if section == 'agents' %}
+  {% if selected %}
+  <div class="nx-card-hd" style="padding:0 0 var(--sp-5)">
+    {{ nx.avatar(selected.id, selected.kind, "lg") }}
+    <div>
+      <h2 style="font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--tx-1)">{{ selected.name }}</h2>
+      <div class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-3)">{{ selected.id }}</div>
+    </div>
+  </div>
+
+  <form style="display:flex;flex-direction:column;gap:var(--sp-5)">
+    <div class="nx-settings-group">
+      <h3 class="nx-card-eyebrow" style="margin-bottom:var(--sp-3)">Identity</h3>
+      <div class="nx-field-row">
+        <div class="nx-field">
+          <label class="nx-label">Agent ID</label>
+          <input class="nx-input nx-mono" value="{{ selected.id }}" readonly style="opacity:0.6;cursor:not-allowed">
+        </div>
+        <div class="nx-field">
+          <label class="nx-label">Kind</label>
+          <select class="nx-input" name="kind">
+            {% for k in ["human","code","comms","pipe"] %}
+            <option value="{{ k }}" {% if selected.kind == k %}selected{% endif %}>{{ k }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="nx-settings-group">
+      <h3 class="nx-card-eyebrow" style="margin-bottom:var(--sp-3)">LLM routing</h3>
+      <div class="nx-field">
+        <label class="nx-label">Model alias</label>
+        <select class="nx-input" name="model">
+          {% for m in ["claude-sonnet-4-6","claude-haiku-4-5","gpt-4o","llama3-local"] %}
+          <option>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="nx-field" style="margin-top:var(--sp-3)">
+        <label class="nx-label">Base URL</label>
+        <input class="nx-input nx-mono" value="http://192.168.10.29:4000" readonly style="opacity:0.6;cursor:not-allowed">
+      </div>
+    </div>
+
+    <div class="nx-settings-group">
+      <h3 class="nx-card-eyebrow" style="margin-bottom:var(--sp-3)">Safety</h3>
+      <div class="nx-field">
+        <label class="nx-label">Approval gate</label>
+        <select class="nx-input" name="approval_gate">
+          <option>Off</option>
+          <option>High-impact only</option>
+          <option>Outbound only</option>
+          <option selected>Always</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:var(--sp-2)">
+      {{ nx.button("Save changes", variant="primary") }}
+      {{ nx.button("Revert", variant="secondary") }}
+    </div>
+  </form>
+  {% else %}
+  <div style="color:var(--tx-4);font-size:var(--fs-md);padding:var(--sp-8)">
+    Select an agent to configure
+  </div>
+  {% endif %}
+{% else %}
+  <div class="nx-card">
+    <div class="nx-card-hd"><h2>{{ section | replace('_',' ') | title }}</h2></div>
+    <div class="nx-card-bd" style="color:var(--tx-3);font-size:var(--fs-sm);line-height:var(--lh-relaxed)">
+      {% if section == 'tokens' %}
+        Token budget controls are planned but not wired yet. This page now opens as a clear placeholder instead of duplicating the settings screen.
+      {% elif section == 'policy' %}
+        Approval policy controls are planned but not wired yet. Existing approvals are visible under Approvals.
+      {% elif section == 'nexus' %}
+        MCP and LightRAG connection details are runtime configuration today. Health is exposed through /healthz.
+      {% else %}
+        This settings section is not implemented yet.
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

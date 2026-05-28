@@ -7,10 +7,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import select, and_
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Task
+from app.db.models import Task, TaskRun
 from app.db.session import get_session
 from app.templating import get_templates
 
@@ -37,7 +38,9 @@ async def approvals_page(request: Request, session: Session):
 
     # Awaiting agent: in_progress (dispatched, not yet done)
     awaiting_result = await session.execute(
-        select(Task).where(Task.status == "in_progress")
+        select(Task)
+        .options(selectinload(Task.runs))
+        .where(Task.status == "in_progress")
         .order_by(Task.updated_at.desc())
     )
     awaiting = awaiting_result.scalars().all()
@@ -69,6 +72,18 @@ async def approve_task(request: Request, task_id: uuid.UUID, session: Session):
         raise HTTPException(404, "Task not found")
     task.requires_approval = False
     task.status = "in_progress"
+    session.add(TaskRun(
+        task_id=task.id,
+        dispatcher=task.owner,
+        status="queued",
+        request_payload={
+            "task_id": str(task.id),
+            "title": task.title,
+            "owner": task.owner,
+            "source": "approval_queue",
+        },
+        log="Approved in Nexus HQ; no live worker integration has acknowledged this task yet.",
+    ))
     await session.commit()
     # Return OOB toast + redirect signal
     return HTMLResponse(
