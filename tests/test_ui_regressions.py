@@ -8,7 +8,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Task, TaskRun
+from app.db.models import EntityPin, Task, TaskEntity, TaskRun
 from app.nexus.client import NexusClient
 from app.templating import get_templates
 
@@ -42,8 +42,24 @@ class TestTaskRowRendering:
 
         assert response.status_code == 200, response.text
         assert 'name="status"' in response.text
-        assert '<select name="status"' in response.text
+        assert 'name="status"' in response.text
         assert 'hx-target="#task-table-wrap"' in response.text
+
+    async def test_task_filters_allow_multiple_statuses_and_domains_with_or_logic(
+        self, client: AsyncClient
+    ):
+        await _create_task(client, title="Open scouting", domain="scouting", status="open")
+        await _create_task(client, title="Waiting personal", domain="personal", status="waiting")
+        await _create_task(client, title="Done work", domain="work", status="done")
+
+        response = await client.get("/tasks?domain=scouting&domain=personal&status=open&status=waiting")
+
+        assert response.status_code == 200, response.text
+        assert "Open scouting" in response.text
+        assert "Waiting personal" in response.text
+        assert "Done work" not in response.text
+        assert 'type="checkbox" name="domain" value="scouting" checked' in response.text
+        assert 'type="checkbox" name="status" value="waiting" checked' in response.text
 
     async def test_htmx_create_returns_current_seven_column_task_row(self, client: AsyncClient):
         response = await client.post(
@@ -94,6 +110,22 @@ class TestTaskRowRendering:
         assert 'class="nx-action-row"' in response.text
         assert "Line 3" in response.text
 
+    async def test_task_detail_shows_previous_dispatch_history(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        await _create_task(client, title="History task")
+        result = await db_session.execute(select(Task).where(Task.title == "History task"))
+        task = result.scalar_one()
+        db_session.add(TaskRun(task_id=task.id, dispatcher="CC", status="queued", log="Queued for worker"))
+        await db_session.commit()
+
+        response = await client.get(f"/tasks/{task.id}")
+
+        assert response.status_code == 200, response.text
+        assert "Previous dispatches" in response.text
+        assert "Queued for worker" in response.text
+        assert 'href="/audit?status=queued"' in response.text
+
 
 class TestApprovalsRendering:
     async def test_dispatch_creates_visible_agent_run_status(
@@ -131,6 +163,7 @@ class TestApprovalsRendering:
         assert response.status_code == 200, response.text
         assert "Queued for CC · queued" in response.text
         assert "Waiting for worker" in response.text
+        assert f'href="/tasks/{task.id}"' in response.text
         assert "Dispatched to ben" not in response.text
 
     async def test_approvals_page_renders_pending_task_with_due_date(self, client: AsyncClient):
@@ -165,6 +198,26 @@ class TestAuditRendering:
         assert response.status_code == 200, response.text
         assert "<html" not in response.text.lower()
         assert "nx-topbar" not in response.text
+
+    async def test_audit_load_more_replaces_single_sentinel_and_filters_status(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        await _create_task(client, title="Audit open")
+        result = await db_session.execute(select(Task).where(Task.title == "Audit open"))
+        task = result.scalar_one()
+        db_session.add_all([
+            TaskRun(task_id=task.id, dispatcher="CC", status="queued", log="Queued one"),
+            TaskRun(task_id=task.id, dispatcher="CC", status="queued", log="Queued two"),
+            TaskRun(task_id=task.id, dispatcher="CC", status="failed", log="Failed one"),
+        ])
+        await db_session.commit()
+
+        page = await client.get("/audit?status=queued&limit=1")
+        assert page.status_code == 200, page.text
+        assert "Queued" in page.text
+        assert "Failed one" not in page.text
+        assert page.text.count('id="audit-more"') == 1
+        assert 'hx-target="#audit-more"' in page.text
 
 
 class TestAskFormAndRoute:
@@ -206,6 +259,23 @@ class TestAskFormAndRoute:
         assert seen == {"query": "What is slow?", "mode": "hybrid"}
         assert "ok" in response.text
 
+    async def test_ask_route_accepts_global_json_encoded_htmx_body(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        class FakeNexusClient:
+            async def query_context(self, query: str, mode: str = "local"):
+                return {"response": f"{mode}: {query}", "references": [], "entities": []}
+
+        monkeypatch.setattr("app.routes.ask.get_nexus_client", lambda: FakeNexusClient())
+        response = await client.post(
+            "/ask",
+            json={"query": "What are the current open tasks for Scouting?", "mode": "hybrid"},
+            headers={"HX-Request": "true"},
+        )
+
+        assert response.status_code == 200, response.text
+        assert "hybrid: What are the current open tasks for Scouting?" in response.text
+
 
 class TestSettingsAndEntitiesRendering:
     async def test_settings_agent_selection_returns_config_fragment_not_nested_page(self, client: AsyncClient):
@@ -219,11 +289,12 @@ class TestSettingsAndEntitiesRendering:
         assert "nx-settings-layout" not in response.text
         assert "LLM routing" in response.text or "Select an agent" in response.text
 
-    async def test_settings_non_agent_sections_render_placeholder_instead_of_duplicate_page(self, client: AsyncClient):
+    async def test_settings_non_agent_sections_render_controls_instead_of_duplicate_page(self, client: AsyncClient):
         response = await client.get("/settings/tokens")
 
         assert response.status_code == 200, response.text
-        assert "Token budget controls are planned" in response.text
+        assert "Token budgets" in response.text
+        assert "Daily soft cap" in response.text
         assert response.text.count("nx-settings-layout") == 1
 
     async def test_entity_search_results_use_nexus_entity_row_format(self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
@@ -239,6 +310,49 @@ class TestSettingsAndEntitiesRendering:
         assert "nx-ent-tag" in response.text
         assert "Pin Theresa" in response.text
         assert "search-result-list" not in response.text
+
+    async def test_task_entity_panel_uses_formatted_attached_rows_and_working_buttons(
+        self, client: AsyncClient, db_session: AsyncSession
+    ):
+        await _create_task(client, title="Entity panel")
+        result = await db_session.execute(select(Task).where(Task.title == "Entity panel"))
+        task = result.scalar_one()
+        db_session.add(TaskEntity(task_id=task.id, entity_name="Theresa", entity_type="person", source="manual"))
+        await db_session.commit()
+
+        response = await client.get(f"/tasks/{task.id}/entities-panel")
+
+        assert response.status_code == 200, response.text
+        assert "nx-entity-panel-row" in response.text
+        assert "nx-ent-tag" in response.text
+        assert 'hx-post="/tasks/' in response.text
+        assert 'hx-vals=' in response.text
+        assert 'entity_name' in response.text
+        assert 'Theresa' in response.text
+
+    async def test_entities_pages_display_entity_types_for_pins_and_detail(
+        self, client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
+    ):
+        db_session.add(EntityPin(entity_name="Theresa", entity_type="person"))
+        await db_session.commit()
+
+        class FakeNexusClient:
+            async def popular_entities(self, limit: int = 30):
+                return []
+            async def get_entity_info(self, entity_name: str):
+                return {"description": "Helper", "entity_type": "person"}
+            async def query_context(self, entity_name: str, mode: str = "local"):
+                return {"entities": []}
+
+        monkeypatch.setattr("app.routes.entities.get_nexus_client", lambda: FakeNexusClient())
+        overview = await client.get("/entities")
+        detail = await client.get("/entities/Theresa")
+
+        assert overview.status_code == 200, overview.text
+        assert detail.status_code == 200, detail.text
+        assert "person" in overview.text
+        assert "person" in detail.text
+        assert "nx-entity-divider" in detail.text
 
 
 class TestHttpSafety:

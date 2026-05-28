@@ -3,6 +3,7 @@
   Suggestions are lazy-loaded by #ep-suggestions-wrap (separate slow request).
   Target: #entities-panel innerHTML
 #}
+{% import "_macros.html.j2" as nx %}
 
 {# ── Attached entities ── #}
 <div class="ep-section">
@@ -14,21 +15,22 @@
   {% if attached %}
   <div class="attached-list">
     {% for e in attached %}
-    <div class="attached-item">
-      <div class="attached-item-main">
-        {% if e.entity_type %}
-        <span class="entity-type-badge type-{{ e.entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ e.entity_type }}</span>
-        {% endif %}
-        <a href="/entities/{{ e.entity_name | urlencode }}" class="entity-name">{{ e.entity_name }}</a>
+    <div class="nx-entity-panel-row">
+      <div class="nx-entity-panel-main">
+        <a href="/entities/{{ e.entity_name | urlencode }}" class="nx-ent-tag">
+          {{ nx.entity_icon(e.entity_type or "system", 16) }}
+          <span class="entity-name">{{ e.entity_name }}</span>
+          {% if e.entity_type %}<span class="nx-ent-type">{{ e.entity_type }}</span>{% endif %}
+        </a>
         {% if e.source == 'auto' %}
         <span class="source-auto-badge" title="Auto-linked from Nexus">auto</span>
         {% endif %}
-        <button class="btn-unpin"
-                title="Detach"
+        <button class="nx-btn ghost nx-btn-sm"
+                title="Detach {{ e.entity_name }}"
                 hx-post="/tasks/{{ task_id }}/entities/detach"
                 hx-vals='{"entity_name": {{ e.entity_name | jsonstr }}}'
                 hx-target="#entities-panel"
-                hx-swap="innerHTML">×</button>
+                hx-swap="innerHTML">Remove</button>
       </div>
       {% if e.attached_by or e.attached_at %}
       <div class="attach-audit">

@@ -4,10 +4,11 @@ import uuid
 from datetime import date, datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, field_validator
 from sqlalchemy import case, func, select, and_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import VALID_DOMAINS, VALID_PRIORITIES, VALID_STATUSES
@@ -73,18 +74,20 @@ def _is_htmx(request: Request) -> bool:
 async def list_tasks(
     request: Request,
     session: Session,
-    domain: str | None = None,
+    domain: Annotated[list[str] | None, Query()] = None,
     category: str | None = None,
-    status: str | None = None,
+    status: Annotated[list[str] | None, Query()] = None,
 ):
+    selected_domains = [d for d in (domain or []) if d and d != "all"]
+    selected_statuses = [s for s in (status or []) if s]
     stmt = select(Task)
     filters = []
-    if domain and domain != "all":
-        filters.append(Task.domain == domain)
+    if selected_domains:
+        filters.append(Task.domain.in_(selected_domains))
     if category:
         filters.append(Task.category == category)
-    if status:
-        filters.append(Task.status == status)
+    if selected_statuses:
+        filters.append(Task.status.in_(selected_statuses))
     if filters:
         stmt = stmt.where(and_(*filters))
 
@@ -114,9 +117,11 @@ async def list_tasks(
 
     ctx = {
         "tasks": tasks,
-        "current_domain": domain or "all",
+        "current_domain": "all" if not selected_domains else selected_domains[0],
+        "current_domains": selected_domains,
         "current_category": category,
-        "current_status": status,
+        "current_status": selected_statuses[0] if len(selected_statuses) == 1 else None,
+        "current_statuses": selected_statuses,
         "domains": sorted(VALID_DOMAINS),
         "domain_counts": domain_counts,
         "statuses": list(VALID_STATUSES),
@@ -145,12 +150,15 @@ async def new_task_drawer(request: Request):
 
 @router.get("/tasks/{task_id}", response_class=HTMLResponse)
 async def get_task(request: Request, task_id: uuid.UUID, session: Session):
-    task = await session.get(Task, task_id)
+    result = await session.execute(
+        select(Task).options(selectinload(Task.runs)).where(Task.id == task_id)
+    )
+    task = result.scalar_one_or_none()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return templates.TemplateResponse(
         request, "tasks/detail.html",
-        {"task": task, "domains": sorted(VALID_DOMAINS), "today": date.today()}
+        {"task": task, "runs": sorted(task.runs, key=lambda r: r.started_at, reverse=True), "domains": sorted(VALID_DOMAINS), "today": date.today()}
     )
 
 

@@ -18,6 +18,7 @@
         <div class="nx-field">
           <label class="nx-label">Agent ID</label>
           <input class="nx-input nx-mono" value="{{ selected.id }}" readonly style="opacity:0.6;cursor:not-allowed">
+          <div class="nx-help">Dispatcher IDs come from config, so editing is disabled until config persistence exists.</div>
         </div>
         <div class="nx-field">
           <label class="nx-label">Kind</label>
@@ -43,6 +44,7 @@
       <div class="nx-field" style="margin-top:var(--sp-3)">
         <label class="nx-label">Base URL</label>
         <input class="nx-input nx-mono" value="http://192.168.10.29:4000" readonly style="opacity:0.6;cursor:not-allowed">
+        <div class="nx-help">Runtime endpoint is currently managed outside this UI.</div>
       </div>
     </div>
 
@@ -69,19 +71,51 @@
     Select an agent to configure
   </div>
   {% endif %}
+{% elif section == 'tokens' %}
+  <div class="nx-card">
+    <div class="nx-card-hd"><h2>Token budgets</h2></div>
+    <div class="nx-card-bd nx-settings-stack">
+      <label class="nx-field"><span class="nx-label">Daily soft cap</span><input class="nx-input" type="number" value="250000"></label>
+      <label class="nx-field"><span class="nx-label">Per-dispatch cap</span><input class="nx-input" type="number" value="32000"></label>
+      <label class="nx-filter-check"><input type="checkbox" checked> Warn before expensive dispatches</label>
+      <div class="nx-help">Preview controls only; saving config is a follow-up task.</div>
+    </div>
+  </div>
+{% elif section == 'policy' %}
+  <div class="nx-card">
+    <div class="nx-card-hd"><h2>Approval policy</h2></div>
+    <div class="nx-card-bd nx-settings-stack">
+      <label class="nx-field"><span class="nx-label">Default policy</span><select class="nx-input"><option>High-impact only</option><option>Always require approval</option><option>Never auto-dispatch</option></select></label>
+      <label class="nx-filter-check"><input type="checkbox" checked> Require approval for outbound comms</label>
+      <label class="nx-filter-check"><input type="checkbox" checked> Require approval for shell/infra actions</label>
+      <div class="nx-help">Preview controls only; existing approvals remain under Approvals.</div>
+    </div>
+  </div>
+{% elif section == 'nexus' %}
+  <div class="nx-card">
+    <div class="nx-card-hd"><h2>MCP & LightRAG</h2></div>
+    <div class="nx-card-bd nx-settings-stack">
+      <label class="nx-filter-check"><input type="checkbox" checked> Enable LightRAG retrieval</label>
+      <label class="nx-filter-check"><input type="checkbox" checked> Enable MCP context links</label>
+      <label class="nx-field"><span class="nx-label">Query mode default</span><select class="nx-input"><option>hybrid</option><option>local</option><option>global</option><option>naive</option></select></label>
+      <div class="nx-help">Runtime connection values are managed by environment/config; health is exposed through /healthz.</div>
+    </div>
+  </div>
+{% elif section == 'appearance' %}
+  <div class="nx-card">
+    <div class="nx-card-hd"><h2>Appearance</h2></div>
+    <div class="nx-card-bd nx-settings-stack">
+      <label class="nx-field"><span class="nx-label">Accent</span><select class="nx-input" onchange="setTweak('accent', this.value)"><option value="teal">Teal</option><option value="violet">Violet</option></select></label>
+      <label class="nx-field"><span class="nx-label">Theme</span><select class="nx-input" onchange="setTweak('mode', this.value)"><option value="dark">Dark</option><option value="light">Light</option></select></label>
+      <label class="nx-field"><span class="nx-label">Density</span><select class="nx-input" onchange="setTweak('density', this.value)"><option value="medium">Medium</option><option value="compact">Compact</option></select></label>
+      <div class="nx-help">These preferences are applied immediately and saved locally in the browser.</div>
+    </div>
+  </div>
 {% else %}
   <div class="nx-card">
     <div class="nx-card-hd"><h2>{{ section | replace('_',' ') | title }}</h2></div>
     <div class="nx-card-bd" style="color:var(--tx-3);font-size:var(--fs-sm);line-height:var(--lh-relaxed)">
-      {% if section == 'tokens' %}
-        Token budget controls are planned but not wired yet. This page now opens as a clear placeholder instead of duplicating the settings screen.
-      {% elif section == 'policy' %}
-        Approval policy controls are planned but not wired yet. Existing approvals are visible under Approvals.
-      {% elif section == 'nexus' %}
-        MCP and LightRAG connection details are runtime configuration today. Health is exposed through /healthz.
-      {% else %}
-        This settings section is not implemented yet.
-      {% endif %}
+      This settings section is not implemented yet.
     </div>
   </div>
 {% endif %}

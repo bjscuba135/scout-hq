@@ -42,11 +42,14 @@
 </div>
 {% endfor %}
 
-{% if next_cursor %}
-<div style="text-align:center;padding:var(--sp-6)">
+<div id="audit-more" style="text-align:center;padding:var(--sp-6)">
+  {% if next_cursor %}
+  {% set ns = namespace(filter_qs="") %}
+  {% for s in selected_statuses or [] %}{% set ns.filter_qs = ns.filter_qs ~ "&status=" ~ s %}{% endfor %}
+  {% for d in selected_dispatchers or [] %}{% set ns.filter_qs = ns.filter_qs ~ "&dispatcher=" ~ d %}{% endfor %}
   {{ nx.button("Load more", variant="ghost",
-     hx={"hx_get": "/audit?before=" ~ next_cursor,
-         "hx_target": ".nx-audit-feed",
-         "hx_swap": "beforeend"}) }}
+     hx={"hx_get": "/audit?before=" ~ next_cursor ~ "&limit=" ~ limit ~ ns.filter_qs,
+         "hx_target": "#audit-more",
+         "hx_swap": "outerHTML"}) }}
+  {% endif %}
 </div>
-{% endif %}

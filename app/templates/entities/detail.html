@@ -20,8 +20,11 @@
       <div class="nx-task-title-row">
         <h1 class="nx-task-h1">{{ entity_name }}</h1>
         {% if entity_type %}
-          {{ nx.entity_icon(entity_type | lower, 24) }}
+          <span class="nx-ent-tag">{{ nx.entity_icon(entity_type | lower, 18) }} <span class="nx-ent-type">{{ entity_type }}</span></span>
         {% endif %}
+      </div>
+
+      <div class="nx-entity-action-row">
         {% if pin %}
           {{ nx.button("Unpin", variant="ghost",
              hx={"hx_post": "/entities/unpin",
@@ -34,6 +37,8 @@
                  "hx_target": "#pinned-entities-list", "hx_swap": "outerHTML"}) }}
         {% endif %}
       </div>
+
+      <div class="nx-entity-divider"></div>
 
       {% if description %}
       <div class="nx-card">

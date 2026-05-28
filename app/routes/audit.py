@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -36,24 +36,38 @@ async def audit_page(
     request: Request,
     session: Session,
     before: str | None = None,
+    status: Annotated[list[str] | None, Query()] = None,
+    dispatcher: Annotated[list[str] | None, Query()] = None,
     limit: int = 50,
 ):
+    selected_statuses = [s for s in (status or []) if s]
+    selected_dispatchers = [d for d in (dispatcher or []) if d]
+    limit = min(max(limit, 1), 100)
     stmt = select(TaskRun).order_by(TaskRun.started_at.desc())
+    if selected_statuses:
+        stmt = stmt.where(TaskRun.status.in_(selected_statuses))
+    if selected_dispatchers:
+        stmt = stmt.where(TaskRun.dispatcher.in_(selected_dispatchers))
     if before:
         try:
             cutoff = datetime.fromisoformat(before)
             stmt = stmt.where(TaskRun.started_at < cutoff)
         except ValueError:
             pass
-    stmt = stmt.limit(limit)
+    stmt = stmt.limit(limit + 1)
 
     result = await session.execute(stmt)
-    runs = result.scalars().all()
+    fetched = list(result.scalars().all())
+    has_more = len(fetched) > limit
+    runs = list(fetched[:limit])
 
     ctx = {
         "groups": _group_by_day(runs),
         "runs": runs,
-        "next_cursor": runs[-1].started_at.isoformat() if runs else None,
+        "next_cursor": runs[-1].started_at.isoformat() if has_more and runs else None,
+        "selected_statuses": selected_statuses,
+        "selected_dispatchers": selected_dispatchers,
+        "limit": limit,
     }
     if before and _is_htmx(request):
         return templates.TemplateResponse(request, "audit/_feed.html", ctx)

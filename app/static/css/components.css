@@ -236,6 +236,25 @@
 }
 .nx-input:disabled     { opacity: 0.5; cursor: not-allowed; }
 
+.nx-filter-multi-form { display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; }
+.nx-filter-fieldset { display:flex; align-items:center; gap:var(--sp-2); border:0; padding:0; margin:0; }
+.nx-filter-fieldset legend { margin-right:var(--sp-1); font-size:var(--fs-xs); color:var(--tx-3); text-transform:uppercase; letter-spacing:.08em; }
+.nx-filter-check { display:inline-flex; align-items:center; gap:6px; min-height:28px; padding:0 var(--sp-2); border:1px solid var(--bd-1); border-radius:var(--r-full); color:var(--tx-2); background:var(--bg-1); font-size:var(--fs-sm); cursor:pointer; }
+.nx-filter-check:has(input:checked) { color:var(--tx-1); border-color:var(--ac); background:color-mix(in oklab, var(--ac) 14%, transparent); }
+.nx-filter-check input { accent-color:var(--ac); }
+.nx-entity-panel-row { padding:var(--sp-3) 0; border-bottom:1px solid var(--bd-1); }
+.nx-entity-panel-row:last-child { border-bottom:0; }
+.nx-entity-panel-main { display:flex; align-items:center; gap:var(--sp-2); justify-content:space-between; }
+.nx-entity-action-row { display:flex; align-items:center; gap:var(--sp-2); margin:var(--sp-3) 0; }
+.nx-entity-divider { height:1px; background:var(--bd-1); margin:var(--sp-4) 0; }
+.nx-settings-stack { display:flex; flex-direction:column; gap:var(--sp-4); }
+.nx-help { color:var(--tx-4); font-size:var(--fs-xs); line-height:var(--lh-relaxed); margin-top:var(--sp-1); }
+.nx-run-row { display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-2) 0; border-bottom:1px solid var(--bd-1); color:var(--tx-2); text-decoration:none; }
+.nx-run-row:last-child { border-bottom:0; }
+.nx-run-row:hover { color:var(--tx-1); }
+.nx-run-log { color:var(--tx-3); font-size:var(--fs-sm); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.nx-btn-sm { height:24px; padding:0 var(--sp-2); font-size:var(--fs-xs); }
+
 /* Checkbox — used for "task done" and audit-log filters */
 .nx-check {
   width: 16px; height: 16px; flex: 0 0 auto;

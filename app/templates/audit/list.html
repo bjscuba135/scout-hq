@@ -20,7 +20,7 @@
   <div class="nx-audit-layout">
 
     {# ── Timeline ─────────────────────────────────────────────────────── #}
-    <div class="nx-audit-feed">
+    <div class="nx-audit-feed" id="audit-feed">
       {% include "audit/_feed.html" %}
     </div>
 
@@ -34,7 +34,8 @@
             {% set dispatchers = runs | map(attribute='dispatcher') | unique | list %}
             {% for d in dispatchers %}
             <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-sm);color:var(--tx-2);margin-bottom:var(--sp-1)">
-              <input type="checkbox" checked> {{ d }}
+              <input type="checkbox" name="dispatcher" value="{{ d }}" {% if not selected_dispatchers or d in selected_dispatchers %}checked{% endif %}
+                     hx-get="/audit" hx-include="closest .nx-audit-rail" hx-target="#audit-feed" hx-swap="innerHTML" hx-push-url="true"> {{ d }}
             </label>
             {% endfor %}
           </div>
@@ -42,7 +43,8 @@
             <div class="nx-card-eyebrow" style="margin-bottom:var(--sp-2)">Status</div>
             {% for s in ["queued","running","succeeded","failed","cancelled"] %}
             <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-sm);color:var(--tx-2);margin-bottom:var(--sp-1)">
-              <input type="checkbox" checked> {{ s }}
+              <input type="checkbox" name="status" value="{{ s }}" {% if not selected_statuses or s in selected_statuses %}checked{% endif %}
+                     hx-get="/audit" hx-include="closest .nx-audit-rail" hx-target="#audit-feed" hx-swap="innerHTML" hx-push-url="true"> {{ s }}
             </label>
             {% endfor %}
           </div>

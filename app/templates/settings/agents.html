@@ -19,8 +19,13 @@
         ("tokens",   "Token budgets",  "bolt"),
         ("policy",   "Approval policy","check"),
         ("nexus",    "MCP & LightRAG", "node"),
+        ("appearance", "Appearance",     "cmd"),
       ] %}
       <a href="/settings/{{ item[0] }}"
+         hx-get="/settings/{{ item[0] }}"
+         hx-target="#nx-settings-config"
+         hx-swap="innerHTML"
+         hx-push-url="true"
          class="nx-settings-nav-item{% if item[0] == selected_section %} active{% endif %}">
         {{ nx.icon(item[2], 13) }} {{ item[1] }}
       </a>

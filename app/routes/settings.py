@@ -16,7 +16,7 @@ _KIND_MAP = {
     "n8n_webhook": "pipe",
     "openclaw":    "comms",
 }
-_VALID_SECTIONS = {"agents", "tokens", "policy", "nexus"}
+_VALID_SECTIONS = {"agents", "tokens", "policy", "nexus", "appearance"}
 
 
 def _is_htmx(request: Request) -> bool:

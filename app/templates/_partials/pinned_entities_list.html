@@ -1,18 +1,20 @@
 {# Pinned entities sidebar list — target: #pinned-entities-list outerHTML #}
-<div id="pinned-entities-list" class="pinned-list">
+{% import "_macros.html.j2" as nx %}
+<div id="pinned-entities-list" class="pinned-list nx-entity-result-list">
   {% if pins %}
     {% for pin in pins %}
-    <div class="pinned-item">
-      <a href="/entities/{{ pin.entity_name | urlencode }}" class="pinned-name">{{ pin.entity_name }}</a>
-      {% if pin.entity_type %}
-      <span class="entity-type-badge type-{{ pin.entity_type | lower | replace(' ','-') | truncate(12,false,'') }}">{{ pin.entity_type }}</span>
-      {% endif %}
-      <button class="btn-unpin"
-              title="Unpin"
+    <div class="nx-entity-result-row">
+      <a href="/entities/{{ pin.entity_name | urlencode }}" class="nx-ent-tag">
+        {{ nx.entity_icon(pin.entity_type or "system", 16) }}
+        <span>{{ pin.entity_name }}</span>
+        {% if pin.entity_type %}<span class="nx-ent-type">{{ pin.entity_type }}</span>{% endif %}
+      </a>
+      <button class="nx-btn ghost nx-btn-sm"
+              title="Unpin {{ pin.entity_name }}"
               hx-post="/entities/unpin"
               hx-vals='{"entity_name": {{ pin.entity_name | jsonstr }}}'
               hx-target="#pinned-entities-list"
-              hx-swap="outerHTML">×</button>
+              hx-swap="outerHTML">Remove</button>
     </div>
     {% endfor %}
   {% else %}

@@ -9,39 +9,33 @@
 
   {# ── Filter bar ────────────────────────────────────────────────────────── #}
   <div class="nx-filter-bar">
-    <div class="nx-pillgroup">
-      <button class="nx-pill{% if current_domain == 'all' %} active{% endif %}"
-              hx-get="/tasks?domain=all{% if current_status %}&status={{ current_status }}{% endif %}"
-              hx-target="#task-table-wrap" hx-push-url="true">
-        All
-        <span class="nx-pill-count">{{ domain_counts.get('all', 0) }}</span>
-      </button>
-      {% for d in domains %}
-      <button class="nx-pill{% if current_domain == d %} active{% endif %}"
-              data-domain="{{ d }}"
-              hx-get="/tasks?domain={{ d }}{% if current_status %}&status={{ current_status }}{% endif %}"
-              hx-target="#task-table-wrap" hx-push-url="true">
-        {{ d | title }}
-        <span class="nx-pill-count">{{ domain_counts.get(d, 0) }}</span>
-      </button>
-      {% endfor %}
-    </div>
-
-    <div class="nx-filter-sep"></div>
-
-    <label class="nx-filter-select">
-      <span>Status</span>
-      <select name="status" class="nx-input"
-              hx-get="/tasks?domain={{ current_domain or 'all' }}"
-              hx-trigger="change"
-              hx-target="#task-table-wrap"
-              hx-push-url="true">
-        <option value="" {% if current_status is none %}selected{% endif %}>All</option>
-        {% for status_name in statuses %}
-        <option value="{{ status_name }}" {% if current_status == status_name %}selected{% endif %}>{{ status_name | replace('_', ' ') | title }}</option>
+    <form class="nx-filter-multi-form"
+          hx-get="/tasks"
+          hx-trigger="change"
+          hx-target="#task-table-wrap"
+          hx-push-url="true">
+      <fieldset class="nx-filter-fieldset">
+        <legend>Domains</legend>
+        {% for d in domains %}
+        <label class="nx-filter-check">
+          <input type="checkbox" name="domain" value="{{ d }}" {% if d in current_domains %}checked{% endif %}>
+          {{ d | title }} <span class="nx-pill-count">{{ domain_counts.get(d, 0) }}</span>
+        </label>
         {% endfor %}
-      </select>
-    </label>
+      </fieldset>
+
+      <div class="nx-filter-sep"></div>
+
+      <fieldset class="nx-filter-fieldset">
+        <legend>Status</legend>
+        {% for status_name in statuses %}
+        <label class="nx-filter-check">
+          <input type="checkbox" name="status" value="{{ status_name }}" {% if status_name in current_statuses %}checked{% endif %}>
+          {{ status_name | replace('_', ' ') | title }}
+        </label>
+        {% endfor %}
+      </fieldset>
+    </form>
 
     <div style="flex:1"></div>
     <span class="nx-result-count nx-mono">{{ tasks | length }} tasks</span>

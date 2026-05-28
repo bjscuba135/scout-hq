@@ -72,7 +72,7 @@
     <div class="nx-card" style="display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-4) var(--sp-5)">
       {{ nx.avatar((latest_run.dispatcher if latest_run else task.owner), "pipe") }}
       <div style="flex:1">
-        <div style="color:var(--tx-1);font-size:var(--fs-md);font-weight:var(--fw-medium)">{{ task.title }}</div>
+        <div style="color:var(--tx-1);font-size:var(--fs-md);font-weight:var(--fw-medium)"><a href="/tasks/{{ task.id }}">{{ task.title }}</a></div>
         <div style="color:var(--tx-3);font-size:var(--fs-sm)">
           {% if latest_run %}
           Queued for {{ latest_run.dispatcher }} · {{ latest_run.status }}{% if latest_run.log %} — {{ latest_run.log }}{% endif %}
@@ -95,7 +95,7 @@
     <div style="display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) 0;border-bottom:1px solid var(--bd-1)">
       <span style="color:var(--sem-done)">{{ nx.icon("check", 13) }}</span>
       <span class="nx-mono" style="font-size:var(--fs-xs);color:var(--tx-4)">{{ task.id | string | truncate(8, end='') }}</span>
-      <span style="color:var(--tx-2);flex:1;font-size:var(--fs-sm)">{{ task.title }}</span>
+      <a href="/tasks/{{ task.id }}" style="color:var(--tx-2);flex:1;font-size:var(--fs-sm)">{{ task.title }}</a>
       <span style="color:var(--tx-4);font-size:var(--fs-xs);font-family:var(--ff-mono)">
         {{ task.updated_at.strftime('%H:%M') }}
       </span>
