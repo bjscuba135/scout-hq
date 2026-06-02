@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir \
 # Copy application source
 COPY alembic.ini .
 COPY app/ ./app/
+COPY workers/ ./workers/
 COPY migrations/ ./migrations/
 COPY config/ ./config/
 
