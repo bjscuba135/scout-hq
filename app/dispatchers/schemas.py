@@ -55,7 +55,7 @@ class WorkOrder(BaseModel):
 
 class WorkerResult(BaseModel):
     schema_version: Literal[1] = 1
-    run_id: UUID | str
+    run_id: UUID
     status: Literal["succeeded", "failed", "cancelled", "awaiting_approval"]
     summary: str
     task_status: Literal["done", "waiting", "open", "in_progress"] | None = None

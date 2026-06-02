@@ -11,8 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Task, TaskRun
+from app.db.models import Task
 from app.db.session import get_session
+from app.dispatchers.service import queue_task_dispatch
 from app.templating import get_templates
 
 router = APIRouter(prefix="/approvals", tags=["approvals"])
@@ -67,24 +68,32 @@ async def approvals_page(request: Request, session: Session):
 
 @router.post("/{task_id}/approve", response_class=HTMLResponse)
 async def approve_task(request: Request, task_id: uuid.UUID, session: Session):
-    task = await session.get(Task, task_id)
+    task_result = await session.execute(
+        select(Task).where(Task.id == task_id).with_for_update()
+    )
+    task = task_result.scalar_one_or_none()
     if not task:
         raise HTTPException(404, "Task not found")
-    task.requires_approval = False
-    task.status = "in_progress"
-    session.add(TaskRun(
-        task_id=task.id,
-        dispatcher=task.owner,
-        status="queued",
-        request_payload={
-            "task_id": str(task.id),
-            "title": task.title,
-            "owner": task.owner,
-            "source": "approval_queue",
-        },
-        log="Approved in Nexus HQ; no live worker integration has acknowledged this task yet.",
-    ))
-    await session.commit()
+    if not task.requires_approval or task.status != "open":
+        return HTMLResponse(
+            f'<div id="toast" hx-swap-oob="true">'
+            f'<div class="nx-toast"><span class="nx-toast-dot"></span>'
+            f'<span>Approval for {str(task_id)[:8]}… already handled</span></div></div>'
+        )
+    try:
+        await queue_task_dispatch(
+            session,
+            task,
+            agent=task.owner,
+            source="approval_queue",
+            clear_approval=True,
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except NotImplementedError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
     # Return OOB toast + redirect signal
     return HTMLResponse(
         f'<div id="toast" hx-swap-oob="true">'

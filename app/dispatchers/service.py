@@ -38,6 +38,7 @@ async def queue_task_dispatch(
     task: Task,
     agent: str | None = None,
     source: str = "nexus_hq_dispatch",
+    clear_approval: bool = False,
 ) -> TaskRun:
     """Create a run ledger entry and enqueue a task through the selected dispatcher.
 
@@ -54,7 +55,11 @@ async def queue_task_dispatch(
     else:
         dispatcher = registry.for_owner(task.owner)
 
+    previous_status = task.status
+    previous_requires_approval = task.requires_approval
     task.status = "in_progress"
+    if clear_approval:
+        task.requires_approval = False
     run_id = uuid.uuid4()
     queue_file = _queue_file_for(dispatcher, run_id)
     request_payload: dict[str, Any] = {
@@ -94,6 +99,8 @@ async def queue_task_dispatch(
     except Exception as exc:
         run.status = "failed"
         run.log = f"Dispatch failed for {run.dispatcher}: {exc}"
+        task.status = previous_status
+        task.requires_approval = previous_requires_approval
         await session.commit()
         raise
 
