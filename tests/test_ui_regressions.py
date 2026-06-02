@@ -8,6 +8,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.db.models import EntityPin, Task, TaskEntity, TaskRun
 from app.nexus.client import NexusClient
 from app.templating import get_templates
@@ -129,8 +130,25 @@ class TestTaskRowRendering:
 
 class TestApprovalsRendering:
     async def test_dispatch_creates_visible_agent_run_status(
-        self, client: AsyncClient, db_session: AsyncSession
+        self, client: AsyncClient, db_session: AsyncSession, tmp_path, monkeypatch
     ):
+        queue_dir = tmp_path / "queue" / "claude"
+        dispatchers_yaml = tmp_path / "dispatchers.yaml"
+        dispatchers_yaml.write_text(
+            f"""
+dispatchers:
+  - type: claude_code
+    name: Claude Code
+    owner_pattern: CC|claude|claude_code
+    transport: file_queue
+    queue_dir: {queue_dir}
+    capabilities: [code, shell]
+""",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("DISPATCHERS_CONFIG_PATH", str(dispatchers_yaml))
+        get_settings.cache_clear()
+
         await _create_task(client, title="Dispatch visibility")
         result = await db_session.execute(select(Task).where(Task.title == "Dispatch visibility"))
         task = result.scalar_one()
@@ -143,11 +161,14 @@ class TestApprovalsRendering:
 
         assert response.status_code == 200, response.text
         assert "Queued" in response.text
-        assert "does not stream an agent reply" in response.text
+        assert "Work order accepted" in response.text
         runs = await db_session.execute(select(TaskRun).where(TaskRun.task_id == task.id))
         run = runs.scalar_one()
-        assert run.dispatcher == "CC"
+        assert run.dispatcher == "claude_code"
         assert run.status == "queued"
+        assert (queue_dir / f"{run.id}.task.json").exists()
+
+        get_settings.cache_clear()
 
     async def test_approvals_awaiting_agent_uses_run_status_not_owner_label(
         self, client: AsyncClient, db_session: AsyncSession

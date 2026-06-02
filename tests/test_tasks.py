@@ -4,7 +4,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import Task
+from app.config import get_settings
+from app.db.models import Task, TaskRun
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -101,6 +102,68 @@ class TestDetail:
         import uuid
         r = await client.get(f"/tasks/{uuid.uuid4()}")
         assert r.status_code == 404
+
+
+class TestDispatch:
+    async def _get_task_id(self, db_session: AsyncSession, title: str) -> str:
+        from sqlalchemy import select
+        result = await db_session.execute(select(Task).where(Task.title == title))
+        task = result.scalar_one()
+        return str(task.id)
+
+    async def test_dispatch_writes_provider_neutral_queue_file(
+        self,
+        client: AsyncClient,
+        db_session: AsyncSession,
+        tmp_path,
+        monkeypatch,
+    ):
+        queue_dir = tmp_path / "queue" / "claude"
+        dispatchers_yaml = tmp_path / "dispatchers.yaml"
+        dispatchers_yaml.write_text(
+            f"""
+dispatchers:
+  - type: human
+    owner_pattern: ben|human
+    transport: human
+  - type: claude_code
+    name: Claude Code
+    owner_pattern: CC|claude|claude_code
+    transport: file_queue
+    queue_dir: {queue_dir}
+    capabilities: [code, shell]
+""",
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("DISPATCHERS_CONFIG_PATH", str(dispatchers_yaml))
+        get_settings.cache_clear()
+
+        await _create(client, title="Dispatch me", owner="claude_code")
+        tid = await self._get_task_id(db_session, "Dispatch me")
+
+        r = await client.post(f"/tasks/{tid}/dispatch?agent=claude_code")
+
+        assert r.status_code == 200, r.text
+        assert "Queued" in r.text
+
+        db_session.expire_all()
+        from sqlalchemy import select
+        task_result = await db_session.execute(select(Task).where(Task.id == tid))
+        task = task_result.scalar_one()
+        assert task.status == "in_progress"
+
+        run_result = await db_session.execute(select(TaskRun).where(TaskRun.task_id == tid))
+        run = run_result.scalar_one()
+        assert run.dispatcher == "claude_code"
+        assert run.status == "queued"
+
+        queue_file = queue_dir / f"{run.id}.task.json"
+        assert queue_file.exists()
+        payload = queue_file.read_text(encoding="utf-8")
+        assert '\"type\": \"claude_code\"' in payload
+        assert '\"transport\": \"file_queue\"' in payload
+
+        get_settings.cache_clear()
 
 
 class TestPatch:

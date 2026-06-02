@@ -12,8 +12,9 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.constants import VALID_DOMAINS, VALID_PRIORITIES, VALID_STATUSES
-from app.db.models import EntityPin, Task, TaskRun
+from app.db.models import EntityPin, Task
 from app.db.session import get_session
+from app.dispatchers.service import queue_task_dispatch
 from app.templating import get_templates
 
 router = APIRouter(tags=["tasks"])
@@ -271,26 +272,25 @@ async def dispatch_task(
     task = await session.get(Task, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    task.status = "in_progress"
-    run = TaskRun(
-        task_id=task.id,
-        dispatcher=agent,
-        status="queued",
-        request_payload={
-            "task_id": str(task.id),
-            "title": task.title,
-            "owner": task.owner,
-            "source": "nexus_hq_dispatch_button",
-        },
-        log=f"Queued for {agent}; no live worker integration has acknowledged this task yet.",
-    )
-    session.add(run)
-    await session.commit()
+    try:
+        run = await queue_task_dispatch(
+            session,
+            task,
+            agent=agent,
+            source="nexus_hq_dispatch_button",
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except NotImplementedError as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
     short = str(task_id)[:8]
     return HTMLResponse(
         f'<div class="nx-inline-status-msg">'
-        f'<strong>Queued {short} for {agent}.</strong> '
-        f'Check Approvals/Audit for progress; this button currently queues a TaskRun and does not stream an agent reply.'
+        f'<strong>Queued {short} for {run.dispatcher}.</strong> '
+        f'Work order accepted; check Approvals/Audit for worker progress.'
         f'</div>'
     )
 

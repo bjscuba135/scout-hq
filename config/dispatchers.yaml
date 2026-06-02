@@ -1,20 +1,53 @@
 dispatchers:
   - type: human
+    name: Human Queue
+    owner_pattern: ben|human
+    transport: human
+    capabilities:
+      - manual_review
     # no-op; tasks owned by 'ben' or 'human' show in UI for manual action
 
   - type: n8n_webhook
+    name: n8n Webhook
+    owner_pattern: n8n|automation
+    transport: webhook
     base_url: http://192.168.10.29:5678
+    capabilities:
+      - automation
+      - webhook
     flows:
       email_triage: /webhook/email-triage
       osm_digest:   /webhook/osm-digest
 
   - type: claude_code
-    queue_dir: /opt/AppData/nexushq/queue/claude
-    # outbound:  nexus-hq writes <run_id>.task.json
-    # inbound:   claude code writes <run_id>.result.json
+    name: Claude Code
+    owner_pattern: claude|claude_code|claude*
+    transport: file_queue
+    queue_dir: /opt/AppData/scouthq/queue/claude
+    capabilities:
+      - code
+      - shell
+      - file_edit
+    # outbound:  Scout HQ writes <run_id>.task.json
+    # inbound:   worker writes <run_id>.result.json
 
   - type: codex_cli           # Phase 7
+    name: Codex CLI
+    owner_pattern: codex|codex_cli|codex*
+    transport: file_queue
+    queue_dir: /opt/AppData/scouthq/queue/codex
     binary: /usr/local/bin/codex
+    capabilities:
+      - code
+      - shell
+      - file_edit
 
   - type: gemini_cli          # Phase 7
+    name: Gemini CLI
+    owner_pattern: gemini|gemini_cli|gemini*
+    transport: file_queue
+    queue_dir: /opt/AppData/scouthq/queue/gemini
     binary: /usr/local/bin/gemini
+    capabilities:
+      - research
+      - analysis
